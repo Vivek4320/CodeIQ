@@ -1,0 +1,113 @@
+"use client";
+
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
+import { useRouter, usePathname } from "next/navigation";
+
+interface AuthUser {
+  id: number;
+  name: string;
+  email: string;
+}
+
+interface AuthContextValue {
+  user: AuthUser | null;
+  login: (email: string, password: string) => Promise<boolean>;
+  signup: (name: string, email: string, password: string) => Promise<boolean>;
+  logout: () => void;
+}
+
+const AuthContext = createContext<AuthContextValue>({
+  user: null,
+  login: async () => false,
+  signup: async () => false,
+  logout: () => {},
+});
+
+const PUBLIC_PAGES = ["/", "/login", "/signup"];
+const PROTECTED_PAGES = ["/features", "/docs"];
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    const storedEmail = localStorage.getItem("codeiq_email");
+    if (storedEmail) {
+      fetch("/api/auth/me", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: storedEmail }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.user) setUser(data.user);
+          else localStorage.removeItem("codeiq_email");
+        })
+        .catch(() => localStorage.removeItem("codeiq_email"))
+        .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (loading) return;
+    if (!user && PROTECTED_PAGES.includes(pathname)) {
+      router.push("/signup");
+    }
+  }, [user, loading, pathname, router]);
+
+  const signup = useCallback(async (name: string, email: string, password: string) => {
+    const res = await fetch("/api/auth/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, password }),
+    });
+    const data = await res.json();
+    if (!res.ok) { alert(data.error || "Signup failed"); return false; }
+    localStorage.setItem("codeiq_email", email);
+    setUser(data.user);
+    router.push("/");
+    return true;
+  }, [router]);
+
+  const login = useCallback(async (email: string, password: string) => {
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
+    if (!res.ok) { alert(data.error || "Login failed"); return false; }
+    localStorage.setItem("codeiq_email", email);
+    setUser(data.user);
+    router.push("/");
+    return true;
+  }, [router]);
+
+  const logout = useCallback(() => {
+    localStorage.removeItem("codeiq_email");
+    setUser(null);
+    router.push("/");
+  }, [router]);
+
+  if (loading) {
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#000", color: "#fff" }}>
+        <span className="font-mono" style={{ fontSize: "13px", opacity: 0.5 }}>Loading...</span>
+      </div>
+    );
+  }
+
+  return (
+    <AuthContext.Provider value={{ user, login, signup, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  return useContext(AuthContext);
+}

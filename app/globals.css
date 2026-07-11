@@ -1,0 +1,81 @@
+@import "tailwindcss";
+
+:root {
+  --background: #000000;
+  --foreground: #FFFFFF;
+  --panel: #0A0A0A;
+  --muted: rgba(255,255,255,0.55);
+  --faint: rgba(255,255,255,0.35);
+  --border: rgba(255,255,255,0.14);
+  --accent: #FFFFFF;
+  --accent-hover: rgba(255,255,255,0.85);
+  --card-bg: #0A0A0A;
+  --card-border: rgba(255,255,255,0.14);
+  --code-bg: #0A0A0A;
+  --code-text: rgba(255,255,255,0.85);
+  --hero-glow: rgba(255,255,255,0.03);
+  --navbar-bg: rgba(0,0,0,0.8);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html, body {
+  background: var(--background);
+  color: var(--foreground);
+  transition: background 0.35s ease, color 0.35s ease;
+}
+
+.font-display {
+  font-family: var(--font-display), serif;
+}
+.font-body {
+  font-family: var(--font-body), sans-serif;
+}
+.font-mono {
+  font-family: var(--font-mono), monospace;
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 22s linear infinite;
+}
+
+.hcards::-webkit-scrollbar {
+  height: 6px;
+}
+.hcards::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.nav-link {
+  transition: color 0.2s ease;
+}
+.nav-link:hover {
+  color: var(--accent) !important;
+}
+.nav-underline {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 1px;
+  width: 0;
+  transition: width 0.25s ease;
+}
+.nav-link:hover .nav-underline {
+  width: 100%;
+}
