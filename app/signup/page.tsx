@@ -8,6 +8,7 @@ import Footer from "@/components/Footer";
 import Logo from "@/components/landing/Logo";
 import { useTheme } from "@/components/landing/ThemeContext";
 import { useAuth } from "@/components/AuthContext";
+import GoogleSignIn from "@/components/GoogleSignIn";
 
 const display = Instrument_Serif({
   subsets: ["latin"],
@@ -29,7 +30,7 @@ interface Errors {
 
 export default function SignupPage() {
   const { theme } = useTheme();
-  const { signup } = useAuth();
+  const { signup, loginWithGoogle } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -192,6 +193,14 @@ export default function SignupPage() {
               Create account <ArrowRight size={16} />
             </button>
           </form>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "16px", margin: "28px 0" }}>
+            <div style={{ flex: 1, height: "1px", backgroundColor: theme.border }} />
+            <span className="font-mono" style={{ fontSize: "11px", color: theme.faint }}>or</span>
+            <div style={{ flex: 1, height: "1px", backgroundColor: theme.border }} />
+          </div>
+
+          <GoogleSignIn onSuccess={loginWithGoogle} text="Sign up with Google" />
 
           <p className="font-body" style={{ fontSize: "13px", color: theme.muted, textAlign: "center", marginTop: "28px" }}>
             Already have an account?{" "}

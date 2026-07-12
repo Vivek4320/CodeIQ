@@ -13,7 +13,7 @@ export default function CTASection() {
         Start writing code that <span style={{ fontStyle: "italic" }}>finishes itself.</span>
       </h2>
       <Link
-        href="/signup"
+        href="/editor"
         className="font-body"
         style={{
           fontWeight: 500,

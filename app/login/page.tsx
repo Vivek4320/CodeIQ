@@ -8,6 +8,7 @@ import Footer from "@/components/Footer";
 import Logo from "@/components/landing/Logo";
 import { useTheme } from "@/components/landing/ThemeContext";
 import { useAuth } from "@/components/AuthContext";
+import GoogleSignIn from "@/components/GoogleSignIn";
 
 const display = Instrument_Serif({
   subsets: ["latin"],
@@ -28,7 +29,7 @@ interface Errors {
 
 export default function LoginPage() {
   const { theme } = useTheme();
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -168,6 +169,14 @@ export default function LoginPage() {
               Sign in <ArrowRight size={16} />
             </button>
           </form>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "16px", margin: "28px 0" }}>
+            <div style={{ flex: 1, height: "1px", backgroundColor: theme.border }} />
+            <span className="font-mono" style={{ fontSize: "11px", color: theme.faint }}>or</span>
+            <div style={{ flex: 1, height: "1px", backgroundColor: theme.border }} />
+          </div>
+
+          <GoogleSignIn onSuccess={loginWithGoogle} text="Continue with Google" />
 
           <p className="font-body" style={{ fontSize: "13px", color: theme.muted, textAlign: "center", marginTop: "28px" }}>
             Don&apos;t have an account?{" "}

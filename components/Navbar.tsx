@@ -33,6 +33,7 @@ export default function Navbar() {
   }, [open, profileOpen]);
 
   const navLinks = [
+    ...(user ? [{ label: "Dashboard", href: "/dashboard" }] : []),
     { label: "Features", href: user ? "/features" : "/signup" },
     { label: "Docs", href: user ? "/docs" : "/signup" },
   ];

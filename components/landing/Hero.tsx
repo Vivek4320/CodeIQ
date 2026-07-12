@@ -26,7 +26,7 @@ export default function Hero() {
       </p>
       <div style={{ display: "flex", justifyContent: "center", gap: "14px", flexWrap: "wrap" }}>
         <Link
-          href="/signup"
+          href="/editor"
           className="font-body"
           style={{
             fontWeight: 500,

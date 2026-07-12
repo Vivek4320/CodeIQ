@@ -79,3 +79,10 @@ html, body {
 .nav-link:hover .nav-underline {
   width: 100%;
 }
+
+/* Editor resize handle */
+.resize-handle {
+  cursor: col-resize;
+  user-select: none;
+  touch-action: none;
+}

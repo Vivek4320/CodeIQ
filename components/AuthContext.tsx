@@ -13,6 +13,7 @@ interface AuthContextValue {
   user: AuthUser | null;
   login: (email: string, password: string) => Promise<boolean>;
   signup: (name: string, email: string, password: string) => Promise<boolean>;
+  loginWithGoogle: (credential: string) => Promise<boolean>;
   logout: () => void;
 }
 
@@ -20,11 +21,26 @@ const AuthContext = createContext<AuthContextValue>({
   user: null,
   login: async () => false,
   signup: async () => false,
+  loginWithGoogle: async () => false,
   logout: () => {},
 });
 
 const PUBLIC_PAGES = ["/", "/login", "/signup"];
-const PROTECTED_PAGES = ["/features", "/docs"];
+const PROTECTED_PAGES = ["/features", "/docs", "/dashboard", "/editor"];
+
+// Decode Google JWT token (no verification for demo — in production use a library)
+function decodeGoogleJWT(token: string) {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return {
+      name: payload.name || "",
+      email: payload.email || "",
+      image: payload.picture || "",
+    };
+  } catch {
+    return null;
+  }
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -32,6 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
+  // Check if user is logged in on mount
   useEffect(() => {
     const storedEmail = localStorage.getItem("codeiq_email");
     if (storedEmail) {
@@ -52,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Redirect if accessing protected page without auth
   useEffect(() => {
     if (loading) return;
     if (!user && PROTECTED_PAGES.includes(pathname)) {
@@ -69,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!res.ok) { alert(data.error || "Signup failed"); return false; }
     localStorage.setItem("codeiq_email", email);
     setUser(data.user);
-    router.push("/");
+    router.push("/editor");
     return true;
   }, [router]);
 
@@ -83,12 +101,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!res.ok) { alert(data.error || "Login failed"); return false; }
     localStorage.setItem("codeiq_email", email);
     setUser(data.user);
-    router.push("/");
+    router.push("/editor");
     return true;
+  }, [router]);
+
+  // Google sign-in — receives JWT credential from Google
+  const loginWithGoogle = useCallback(async (credential: string) => {
+    const userData = decodeGoogleJWT(credential);
+    if (!userData || !userData.email) {
+      alert("Google sign-in failed. Please try again.");
+      return false;
+    }
+
+    try {
+      const res = await fetch("/api/auth/google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(userData),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || "Google sign-in failed");
+        return false;
+      }
+
+      localStorage.setItem("codeiq_email", userData.email);
+      setUser(data.user);
+      router.push("/editor");
+      return true;
+    } catch {
+      alert("Google sign-in failed. Please try again.");
+      return false;
+    }
   }, [router]);
 
   const logout = useCallback(() => {
     localStorage.removeItem("codeiq_email");
+    // Clear Google sign-in state
+    if (window.google?.accounts?.id) {
+      window.google.accounts.id.disableAutoSelect();
+    }
     setUser(null);
     router.push("/");
   }, [router]);
@@ -102,7 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, login, signup, loginWithGoogle, logout }}>
       {children}
     </AuthContext.Provider>
   );
