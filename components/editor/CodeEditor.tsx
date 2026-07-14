@@ -5,7 +5,7 @@ import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLi
 import { EditorState } from "@codemirror/state";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { bracketMatching, foldGutter, HighlightStyle, syntaxHighlighting } from "@codemirror/language";
-import { autocompletion, closeBrackets } from "@codemirror/autocomplete";
+import { autocompletion, closeBrackets, type CompletionContext, type CompletionResult } from "@codemirror/autocomplete";
 import { tags } from "@lezer/highlight";
 import { javascript } from "@codemirror/lang-javascript";
 import { python } from "@codemirror/lang-python";
@@ -23,6 +23,8 @@ const languageExtensions: Record<string, any> = {
   rust: rust(),
   go: javascript(),
   ruby: javascript(),
+  haskell: javascript(),
+  c: cpp(),
 };
 
 // Language-specific completions
@@ -145,7 +147,136 @@ const languageCompletions: Record<string, { label: string; type: string; detail?
     { label: "and", type: "keyword" },
     { label: "or", type: "keyword" },
   ],
+  haskell: [
+    { label: "putStrLn", type: "function", detail: "Print line" },
+    { label: "print", type: "function", detail: "Print value" },
+    { label: "putStr", type: "function", detail: "Print string" },
+    { label: "getLine", type: "function", detail: "Read line" },
+    { label: "getContents", type: "function", detail: "Read all input" },
+    { label: "map", type: "function", detail: "Map function over list" },
+    { label: "filter", type: "function", detail: "Filter list" },
+    { label: "foldl", type: "function", detail: "Fold left" },
+    { label: "foldr", type: "function", detail: "Fold right" },
+    { label: "head", type: "function", detail: "First element" },
+    { label: "tail", type: "function", detail: "All but first" },
+    { label: "length", type: "function", detail: "List length" },
+    { label: "reverse", type: "function", detail: "Reverse list" },
+    { label: "zip", type: "function", detail: "Zip two lists" },
+    { label: "fst", type: "function", detail: "First of pair" },
+    { label: "snd", type: "function", detail: "Second of pair" },
+    { label: "head", type: "function", detail: "First element" },
+    { label: "abs", type: "function", detail: "Absolute value" },
+    { label: "max", type: "function", detail: "Maximum" },
+    { label: "min", type: "function", detail: "Minimum" },
+    { label: "null", type: "function", detail: "Check empty list" },
+    { label: "otherwise", type: "keyword", detail: "Catch all" },
+    { label: "where", type: "keyword" },
+    { label: "let", type: "keyword" },
+    { label: "in", type: "keyword" },
+    { label: "if", type: "keyword" },
+    { label: "then", type: "keyword" },
+    { label: "else", type: "keyword" },
+    { label: "case", type: "keyword" },
+    { label: "of", type: "keyword" },
+    { label: "do", type: "keyword" },
+    { label: "module", type: "keyword" },
+    { label: "import", type: "keyword" },
+    { label: "data", type: "keyword" },
+    { label: "type", type: "keyword" },
+    { label: "class", type: "keyword" },
+    { label: "instance", type: "keyword" },
+    { label: "deriving", type: "keyword" },
+    { label: "True", type: "keyword" },
+    { label: "False", type: "keyword" },
+    { label: "not", type: "function", detail: "Boolean not" },
+    { label: "&&", type: "keyword", detail: "Boolean and" },
+    { label: "||", type: "keyword", detail: "Boolean or" },
+    { label: "Maybe", type: "class", detail: "Maybe type" },
+    { label: "Just", type: "constructor", detail: "Just value" },
+    { label: "Nothing", type: "constructor", detail: "Nothing value" },
+    { label: "IO", type: "type", detail: "IO monad" },
+    { label: "String", type: "type", detail: "String type" },
+    { label: "Int", type: "type", detail: "Integer type" },
+    { label: "Char", type: "type", detail: "Character type" },
+  ],
+  c: [
+    { label: "printf", type: "function", detail: "Print formatted output" },
+    { label: "scanf", type: "function", detail: "Read formatted input" },
+    { label: "fprintf", type: "function", detail: "Print to file" },
+    { label: "fscanf", type: "function", detail: "Read from file" },
+    { label: "sprintf", type: "function", detail: "Print to string" },
+    { label: "malloc", type: "function", detail: "Allocate memory" },
+    { label: "calloc", type: "function", detail: "Allocate zeroed memory" },
+    { label: "realloc", type: "function", detail: "Reallocate memory" },
+    { label: "free", type: "function", detail: "Free memory" },
+    { label: "strlen", type: "function", detail: "String length" },
+    { label: "strcpy", type: "function", detail: "Copy string" },
+    { label: "strcat", type: "function", detail: "Concatenate strings" },
+    { label: "strcmp", type: "function", detail: "Compare strings" },
+    { label: "memcpy", type: "function", detail: "Copy memory" },
+    { label: "memset", type: "function", detail: "Set memory" },
+    { label: "fopen", type: "function", detail: "Open file" },
+    { label: "fclose", type: "function", detail: "Close file" },
+    { label: "fread", type: "function", detail: "Read from file" },
+    { label: "fwrite", type: "function", detail: "Write to file" },
+    { label: "fgets", type: "function", detail: "Read line from file" },
+    { label: "fputs", type: "function", detail: "Write string to file" },
+    { label: "abs", type: "function", detail: "Absolute value" },
+    { label: "pow", type: "function", detail: "Power" },
+    { label: "sqrt", type: "function", detail: "Square root" },
+    { label: "ceil", type: "function", detail: "Round up" },
+    { label: "floor", type: "function", detail: "Round down" },
+    { label: "int", type: "type", detail: "Integer type" },
+    { label: "float", type: "type", detail: "Float type" },
+    { label: "double", type: "type", detail: "Double type" },
+    { label: "char", type: "type", detail: "Character type" },
+    { label: "void", type: "type", detail: "Void type" },
+    { label: "struct", type: "keyword" },
+    { label: "enum", type: "keyword" },
+    { label: "typedef", type: "keyword" },
+    { label: "return", type: "keyword" },
+    { label: "if", type: "keyword" },
+    { label: "else", type: "keyword" },
+    { label: "for", type: "keyword" },
+    { label: "while", type: "keyword" },
+    { label: "do", type: "keyword" },
+    { label: "switch", type: "keyword" },
+    { label: "case", type: "keyword" },
+    { label: "break", type: "keyword" },
+    { label: "continue", type: "keyword" },
+    { label: "#include", type: "keyword", detail: "Include header" },
+    { label: "#define", type: "keyword", detail: "Macro definition" },
+    { label: "#ifdef", type: "keyword", detail: "If defined" },
+    { label: "#ifndef", type: "keyword", detail: "If not defined" },
+    { label: "NULL", type: "keyword", detail: "Null pointer" },
+    { label: "sizeof", type: "keyword", detail: "Size of type" },
+    { label: "static", type: "keyword" },
+    { label: "extern", type: "keyword" },
+    { label: "const", type: "keyword" },
+    { label: "sizeof", type: "keyword" },
+    { label: "main", type: "function", detail: "Main entry point" },
+  ],
 };
+
+// AI completions cache
+let aiDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+let lastAiRequest = "";
+let lastAiResult: { label: string; type: string; detail: string; isAI: boolean }[] = [];
+
+async function fetchAICompletions(language: string, code: string, cursorPosition: number) {
+  try {
+    const res = await fetch("/api/ai-complete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ language, code, cursorPosition }),
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.completions || [];
+  } catch {
+    return [];
+  }
+}
 
 function createHighlightStyle(theme: any) {
   return HighlightStyle.define([
@@ -202,21 +333,51 @@ export default function CodeEditor({ language, value, onChange }: CodeEditorProp
 
     const highlightTheme = createHighlightStyle(theme);
 
-    // Custom autocomplete source from language keywords
+    // Custom autocomplete source from language keywords + AI
     const customCompletions = languageCompletions[language] || languageCompletions.javascript;
 
     const myAutocomplete = autocompletion({
       override: [
-        (context) => {
+        (context: CompletionContext): CompletionResult | null => {
           const word = context.matchBefore(/\w*/);
           if (!word || (word.from === word.to && !context.explicit)) return null;
-          return {
-            from: word.from,
-            options: customCompletions.map((c) => ({
+
+          const prefix = word.text.toLowerCase();
+
+          // Static completions (always available immediately)
+          const staticOptions = customCompletions.map((c) => ({
+            label: c.label,
+            type: c.type as any,
+            detail: c.detail,
+          }));
+
+          // Cached AI completions matching current prefix
+          const matchingAI = lastAiResult
+            .filter((c) => c.label.toLowerCase().startsWith(prefix))
+            .map((c) => ({
               label: c.label,
               type: c.type as any,
-              detail: c.detail,
-            })),
+              detail: c.detail + " (AI)",
+            }));
+
+          // Trigger debounced AI fetch (fire-and-forget)
+          const cursorPos = context.pos;
+          const fullCode = context.state.doc.toString();
+          const requestKey = `${language}:${cursorPos}:${fullCode.length}`;
+
+          if (requestKey !== lastAiRequest) {
+            lastAiRequest = requestKey;
+            if (aiDebounceTimer) clearTimeout(aiDebounceTimer);
+            aiDebounceTimer = setTimeout(async () => {
+              const results = await fetchAICompletions(language, fullCode, cursorPos);
+              lastAiResult = results;
+            }, 500);
+          }
+
+          return {
+            from: word.from,
+            options: [...matchingAI, ...staticOptions],
+            validFor: /^\w*$/,
           };
         },
       ],

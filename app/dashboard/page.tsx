@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Plus, Code2, FileCode, Trash2, ExternalLink } from "lucide-react";
+import { Plus, Code2, FileCode, Trash2, ExternalLink, ArrowLeft } from "lucide-react";
 import { Instrument_Serif, Inter, JetBrains_Mono } from "next/font/google";
-import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useTheme } from "@/components/landing/ThemeContext";
 import { useAuth } from "@/components/AuthContext";
@@ -13,7 +12,7 @@ const display = Instrument_Serif({ subsets: ["latin"], weight: ["400"], style: [
 const bodyFont = Inter({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-body" });
 const mono = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-mono" });
 
-const LANGUAGES_LIST = ["JavaScript", "TypeScript", "Python", "C++", "Java", "Go", "Rust", "Ruby"];
+const LANGUAGES_LIST = ["JavaScript", "TypeScript", "Python", "C", "C++", "Java", "Go", "Rust", "Ruby", "Haskell"];
 
 interface Project {
   id: number;
@@ -74,9 +73,14 @@ export default function DashboardPage() {
       className={`${display.variable} ${bodyFont.variable} ${mono.variable}`}
       style={{ minHeight: "100vh", display: "flex", flexDirection: "column", backgroundColor: theme.bg, color: theme.text }}
     >
-      <Navbar />
-
       <main style={{ flex: 1, maxWidth: "1040px", margin: "0 auto", padding: "40px 24px 80px", width: "100%" }}>
+        {/* Back to Home */}
+        <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "8px 14px", fontSize: "12px", fontWeight: 500, color: theme.muted, backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "8px", textDecoration: "none", marginBottom: "28px", transition: "all 0.2s ease" }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.accent; e.currentTarget.style.color = theme.text; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.color = theme.muted; }}>
+          <ArrowLeft size={14} /> Home
+        </Link>
+
         {/* Welcome */}
         <div style={{ marginBottom: "36px" }}>
           <h1 className="font-display" style={{ fontSize: "clamp(28px, 4vw, 38px)", fontWeight: 400, marginBottom: "8px" }}>

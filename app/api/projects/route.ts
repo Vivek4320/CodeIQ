@@ -78,6 +78,37 @@ export async function POST(req: Request) {
   }
 }
 
+// PUT — update an existing project
+export async function PUT(req: Request) {
+  try {
+    await ensureTable();
+    const { email, projectId, name, language, code } = await req.json();
+
+    if (!email || !projectId || !name || !language || code === undefined) {
+      return NextResponse.json({ error: "All fields are required" }, { status: 400 });
+    }
+
+    const [userRows] = await pool.query("SELECT id FROM users WHERE email = ?", [email]);
+    const users = userRows as any[];
+    if (users.length === 0) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    await pool.query(
+      "UPDATE projects SET name = ?, language = ?, code = ? WHERE id = ? AND user_id = ?",
+      [name, language, code, projectId, users[0].id]
+    );
+
+    return NextResponse.json({
+      project: { id: projectId, name, language, code },
+      message: "Project updated successfully",
+    });
+  } catch (error: any) {
+    console.error("Update project error:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
 // DELETE — delete a project
 export async function DELETE(req: Request) {
   try {

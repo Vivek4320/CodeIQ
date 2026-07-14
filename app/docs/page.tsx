@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { BookOpen, Rocket, Code2, Settings, ChevronRight } from "lucide-react";
+import { BookOpen, Rocket, Code2, Settings, ChevronRight, Sparkles, Moon, Bot, Gamepad2, Waves, Shield, Sun, ArrowLeft } from "lucide-react";
+import Link from "next/link";
 import PageLayout from "@/components/PageLayout";
 import { useTheme } from "@/components/landing/ThemeContext";
+import { themes } from "@/components/landing/theme";
 
 const SECTIONS = [
   {
@@ -13,8 +15,8 @@ const SECTIONS = [
     content: {
       heading: "Getting Started with CodeIQ",
       paragraphs: [
-        "CodeIQ is a browser-based code editor that lets you write, run, and share code in 6+ languages — no setup required.",
-        "Simply open the editor, pick your language, and start coding. Your code runs instantly in a secure sandbox.",
+        "CodeIQ is a browser-based code editor that lets you write, run, and share code in 10 languages — no setup required.",
+        "Simply open the editor, pick your language, and start coding. Your code is auto-saved as you type, and you can run it instantly.",
       ],
       code: `// Welcome to CodeIQ!
 // Pick a language and start coding
@@ -37,11 +39,11 @@ console.log(greet("World"));`,
         "Follow these steps to write and run your first program.",
       ],
       steps: [
-        { step: "1", text: "Open CodeIQ in your browser" },
-        { step: "2", text: "Select your programming language from the dropdown" },
-        { step: "3", text: "Write your code in the editor" },
-        { step: "4", text: "Hit the Run button or press Ctrl+Enter" },
-        { step: "5", text: "See your output instantly in the terminal below" },
+        { step: "1", text: "Open CodeIQ and sign up or log in" },
+        { step: "2", text: "Click \"New Project\" on the dashboard" },
+        { step: "3", text: "Select your programming language from the dropdown" },
+        { step: "4", text: "Write your code in the editor — it auto-saves as you type" },
+        { step: "5", text: "Click the Run button to see your output instantly" },
       ],
     },
   },
@@ -52,51 +54,86 @@ console.log(greet("World"));`,
     content: {
       heading: "Supported Languages",
       paragraphs: [
-        "CodeIQ supports 6 popular programming languages out of the box, with more coming soon.",
+        "CodeIQ supports 10 popular programming languages out of the box.",
+        "JavaScript and TypeScript execute live in a Node.js VM. All other languages run through our smart simulator that parses output statements.",
       ],
       languages: [
-        { name: "Python", version: "3.11", status: "Full support" },
-        { name: "JavaScript", version: "ES2024", status: "Full support" },
-        { name: "TypeScript", version: "5.3", status: "Full support" },
-        { name: "C++", version: "C++20", status: "Full support" },
-        { name: "Java", version: "17", status: "Full support" },
-        { name: "Go", version: "1.21", status: "Full support" },
-        { name: "Rust", version: "1.74", status: "Full support" },
-        { name: "Ruby", version: "3.2", status: "Full support" },
+        { name: "JavaScript", version: "ES2024", status: "Live execution" },
+        { name: "TypeScript", version: "5.3", status: "Live execution" },
+        { name: "Python", version: "3.x", status: "Simulated" },
+        { name: "C", version: "C11", status: "Simulated" },
+        { name: "C++", version: "C++20", status: "Simulated" },
+        { name: "Java", version: "17", status: "Simulated" },
+        { name: "Go", version: "1.21", status: "Simulated" },
+        { name: "Rust", version: "1.74", status: "Simulated" },
+        { name: "Ruby", version: "3.2", status: "Simulated" },
+        { name: "Haskell", version: "9.6", status: "Simulated" },
       ],
     },
   },
   {
-    id: "configuration",
-    icon: Settings,
-    title: "Configuration",
+    id: "ai-completion",
+    icon: Sparkles,
+    title: "AI Completion",
     content: {
-      heading: "Editor Configuration",
+      heading: "AI Code Completion",
       paragraphs: [
-        "Customize your coding experience with CodeIQ's built-in settings. Adjust themes, font sizes, keybindings, and more.",
-        "All settings sync across your devices when you create a free account.",
+        "CodeIQ uses Google Gemini to provide real-time AI-powered code completions. As you type, suggestions appear based on your code context.",
+        "AI completions are marked with an \"(AI)\" badge. Static keyword completions are always available as fallback, even without an API key.",
       ],
-      code: `// .codeiqrc — CodeIQ configuration
-{
-  "theme": "midnight",
-  "fontSize": 14,
-  "tabSize": 2,
-  "wordWrap": true,
-  "minimap": false,
-  "autoSave": true
-}`,
+      code: `// To enable AI completion:
+// 1. Get a free API key from Google AI Studio
+//    https://aistudio.google.com/apikey
+// 2. Add it to .env.local:
+//    GEMINI_API_KEY=your_key_here
+// 3. Restart the dev server
+
+// AI completions appear as you type
+// They adapt to your code context
+// and show relevant suggestions`,
+    },
+  },
+  {
+    id: "themes",
+    icon: Settings,
+    title: "Themes",
+    content: {
+      heading: "Editor Themes",
+      paragraphs: [
+        "CodeIQ comes with 7 carefully crafted themes. Switch between them instantly using the theme selector in the editor header or the Navbar.",
+        "Your selected theme persists across sessions and applies to the entire interface — editor, dashboard, and landing page.",
+      ],
+      themes: [
+        { name: "Midnight", icon: Moon, desc: "Clean dark with white accents", color: themes.midnight.accent },
+        { name: "Cyberpunk", icon: Bot, desc: "Neon pink on deep purple", color: themes.cyberpunk.accent },
+        { name: "Retro Gaming", icon: Gamepad2, desc: "Yellow on navy blue", color: themes.retro.accent },
+        { name: "Neon Nights", icon: Sparkles, desc: "Purple on dark blue", color: themes.neonNights.accent },
+        { name: "Deep Ocean", icon: Waves, desc: "Cyan on dark teal", color: themes.ocean.accent },
+        { name: "Hacker", icon: Shield, desc: "Green on black", color: themes.hacker.accent },
+        { name: "Light Mode", icon: Sun, desc: "Clean white with black text", color: themes.lightmode.accent },
+      ],
     },
   },
 ];
 
 export default function DocsPage() {
-  const { theme } = useTheme();
+  const { theme, themeKey } = useTheme();
   const [activeSection, setActiveSection] = useState("getting-started");
+  const isLightTheme = themeKey === "lightmode";
 
   const section = SECTIONS.find((s) => s.id === activeSection)!;
 
   return (
     <PageLayout>
+      {/* Back to Home */}
+      <div style={{ maxWidth: "1040px", margin: "0 auto", padding: "24px 24px 0" }}>
+        <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "8px 14px", fontSize: "12px", fontWeight: 500, color: theme.muted, backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "8px", textDecoration: "none", transition: "all 0.2s ease" }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.accent; e.currentTarget.style.color = theme.text; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.color = theme.muted; }}>
+          <ArrowLeft size={14} /> Home
+        </Link>
+      </div>
+
       <div style={{ maxWidth: "1040px", margin: "0 auto", padding: "60px 24px 100px", display: "flex", gap: "48px" }}>
         {/* Sidebar */}
         <aside style={{ width: "220px", flexShrink: 0 }}>
@@ -255,6 +292,45 @@ export default function DocsPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {/* Themes Grid */}
+          {section.content.themes && (
+            <div style={{ marginTop: "24px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "10px" }}>
+              {section.content.themes.map((t) => {
+                const Icon = t.icon;
+                // In light mode, swap white icons to dark (and vice versa) so they're always visible
+                const iconColor = isLightTheme && t.color === "#FFFFFF"
+                  ? "#111111"
+                  : !isLightTheme && t.color === "#111111"
+                    ? "#FFFFFF"
+                    : t.color;
+                return (
+                  <div
+                    key={t.name}
+                    style={{
+                      display: "flex", alignItems: "center", gap: "12px",
+                      padding: "14px 16px", border: `1px solid ${theme.border}`, borderRadius: "10px",
+                      backgroundColor: theme.panel, transition: "border-color 0.2s ease",
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.accent; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; }}
+                  >
+                    <div style={{
+                      width: "34px", height: "34px", borderRadius: "8px",
+                      backgroundColor: `${iconColor}18`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                      border: `1px solid ${theme.border}`,
+                    }}>
+                      <Icon size={17} style={{ color: iconColor }} />
+                    </div>
+                    <div>
+                      <div className="font-body" style={{ fontSize: "13px", fontWeight: 600, color: theme.text }}>{t.name}</div>
+                      <div className="font-mono" style={{ fontSize: "11px", color: theme.faint }}>{t.desc}</div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
 

@@ -3,9 +3,11 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ArrowLeft, History, Share2, Copy, Check, X, Clock } from "lucide-react";
+import { ArrowLeft, History, Share2, Copy, Check, X, Clock, Palette } from "lucide-react";
 import { Instrument_Serif, Inter, JetBrains_Mono } from "next/font/google";
 import { useTheme } from "@/components/landing/ThemeContext";
+import { themes, type ThemeKey } from "@/components/landing/theme";
+import { themeIcons } from "@/components/landing/ThemeIcons";
 import { useAuth } from "@/components/AuthContext";
 import { useToast } from "@/components/Toast";
 import CodeEditor from "@/components/editor/CodeEditor";
@@ -25,6 +27,8 @@ const DEFAULT_CODE: Record<string, string> = {
   go: `package main\n\nimport "fmt"\n\nfunc main() {\n  fmt.Println("Hello, World!")\n}`,
   rust: `fn main() {\n  println!("Hello, World!");\n}`,
   ruby: `# Welcome to CodeIQ!\nputs "Hello, World!"`,
+  haskell: `-- Welcome to CodeIQ!\nmain :: IO ()\nmain = putStrLn "Hello, World!"`,
+  c: `#include <stdio.h>\n\nint main() {\n  printf("Hello, World!\\n");\n  return 0;\n}`,
 };
 
 const FILE_NAMES: Record<string, string> = {
@@ -36,6 +40,8 @@ const FILE_NAMES: Record<string, string> = {
   go: "main.go",
   rust: "main.rs",
   ruby: "main.rb",
+  haskell: "main.hs",
+  c: "main.c",
 };
 
 interface RunHistory {
@@ -58,7 +64,7 @@ function timeAgo(dateStr: string): string {
 }
 
 export default function EditorPage() {
-  const { theme } = useTheme();
+  const { theme, themeKey, setTheme } = useTheme();
   const { user } = useAuth();
   const { toast } = useToast();
   const searchParams = useSearchParams();
@@ -72,25 +78,67 @@ export default function EditorPage() {
   const isDragging = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Auto-save state
+  const [currentProjectId, setCurrentProjectId] = useState<number | null>(
+    projectId ? Number(projectId) : null
+  );
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const codeRef = useRef(code);
+  const projectNameRef = useRef(projectName);
+
+  // Keep refs in sync with state
+  useEffect(() => { codeRef.current = code; }, [code]);
+  useEffect(() => { projectNameRef.current = projectName; }, [projectName]);
+
   // History & Share state
   const [showHistory, setShowHistory] = useState(false);
   const [runHistory, setRunHistory] = useState<RunHistory[]>([]);
   const [shareUrl, setShareUrl] = useState("");
   const [copied, setCopied] = useState(false);
   const [showShare, setShowShare] = useState(false);
+  const [showThemeMenu, setShowThemeMenu] = useState(false);
+  const themeMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close theme menu on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (themeMenuRef.current && !themeMenuRef.current.contains(e.target as Node)) {
+        setShowThemeMenu(false);
+      }
+    }
+    if (showThemeMenu) document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [showThemeMenu]);
 
   // Load project
   useEffect(() => {
-    if (!projectId || !user) return;
+    if (!user) return;
     fetch(`/api/projects?email=${encodeURIComponent(user.email)}`)
       .then((res) => res.json())
       .then((data) => {
-        const project = data.projects?.find((p: any) => p.id === Number(projectId));
-        if (project) {
-          setLanguage(project.language);
-          setCode(project.code);
-          setProjectName(project.name.replace(/\.[^.]+$/, ""));
+        if (!data.projects || data.projects.length === 0) return;
+
+        if (projectId) {
+          // Load specific project by ID
+          const project = data.projects.find((p: any) => p.id === Number(projectId));
+          if (project) {
+            setLanguage(project.language);
+            setCode(project.code);
+            setProjectName(project.name.replace(/\.[^.]+$/, ""));
+            setCurrentProjectId(project.id);
+            setSaveStatus("saved");
+            setOutput([]);
+          }
+        } else {
+          // No ID in URL → load the most recent project
+          const latest = data.projects[0];
+          setLanguage(latest.language);
+          setCode(latest.code);
+          setProjectName(latest.name.replace(/\.[^.]+$/, ""));
+          setCurrentProjectId(latest.id);
+          setSaveStatus("saved");
           setOutput([]);
+          window.history.replaceState(null, "", `/editor?id=${latest.id}`);
         }
       });
   }, [projectId, user]);
@@ -106,6 +154,55 @@ export default function EditorPage() {
   useEffect(() => {
     if (showHistory) loadHistory();
   }, [showHistory, loadHistory]);
+
+  // Clear output when code changes (debounced)
+  useEffect(() => {
+    if (output.length === 0) return;
+    const timer = setTimeout(() => setOutput([]), 1500);
+    return () => clearTimeout(timer);
+  }, [code]);
+
+  // Auto-save with 3-second debounce
+  useEffect(() => {
+    if (!user) return;
+
+    const timer = setTimeout(async () => {
+      const currentCode = codeRef.current;
+      const currentName = projectNameRef.current;
+      const name = `${currentName}.${FILE_NAMES[language]?.split(".")[1] || "txt"}`;
+
+      setSaveStatus("saving");
+      try {
+        if (currentProjectId) {
+          const res = await fetch("/api/projects", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: user.email, projectId: currentProjectId, name, language, code: currentCode }),
+          });
+          if (res.ok) setSaveStatus("saved");
+          else setSaveStatus("idle");
+        } else {
+          const res = await fetch("/api/projects", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: user.email, name, language, code: currentCode }),
+          });
+          const data = await res.json();
+          if (res.ok && data.project) {
+            setCurrentProjectId(data.project.id);
+            setSaveStatus("saved");
+            window.history.replaceState(null, "", `/editor?id=${data.project.id}`);
+          } else {
+            setSaveStatus("idle");
+          }
+        }
+      } catch {
+        setSaveStatus("idle");
+      }
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [code, projectName, language, user, currentProjectId]);
 
   // Drag handler
   const handleDragStart = useCallback((e: React.MouseEvent) => {
@@ -134,6 +231,8 @@ export default function EditorPage() {
     setCode(DEFAULT_CODE[lang] || "");
     setOutput([]);
     setProjectName("untitled");
+    setCurrentProjectId(null);
+    setSaveStatus("idle");
   }, []);
 
   // Run code + save to history
@@ -179,18 +278,30 @@ export default function EditorPage() {
     if (!user) return;
     const name = `${projectName}.${FILE_NAMES[language]?.split(".")[1] || "txt"}`;
     try {
+      const method = currentProjectId ? "PUT" : "POST";
+      const body: Record<string, unknown> = { email: user.email, name, language, code };
+      if (currentProjectId) body.projectId = currentProjectId;
+
       const res = await fetch("/api/projects", {
-        method: "POST",
+        method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: user.email, name, language, code }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
-      if (res.ok) toast("Project saved successfully!", "success");
-      else toast(data.error || "Failed to save", "error");
+      if (res.ok) {
+        if (!currentProjectId && data.project) {
+          setCurrentProjectId(data.project.id);
+          window.history.replaceState(null, "", `/editor?id=${data.project.id}`);
+        }
+        setSaveStatus("saved");
+        toast("Project saved successfully!", "success");
+      } else {
+        toast(data.error || "Failed to save", "error");
+      }
     } catch {
       toast("Failed to save project", "error");
     }
-  }, [user, projectName, language, code, toast]);
+  }, [user, projectName, language, code, toast, currentProjectId]);
 
   // Share code
   const handleShare = useCallback(async () => {
@@ -241,9 +352,38 @@ export default function EditorPage() {
           </Link>
           <input type="text" value={projectName} onChange={(e) => setProjectName(e.target.value)} className="font-mono"
             style={{ fontSize: "13px", color: theme.faint, backgroundColor: "transparent", border: "none", outline: "none", padding: "4px 8px", borderBottom: `1px solid ${theme.border}`, width: "140px" }} />
-          <span className="font-mono" style={{ fontSize: "12px", color: theme.faint }}>{language}</span>
+          <span className="font-mono" style={{ fontSize: "12px", color: theme.faint }}>.{FILE_NAMES[language]?.split(".")[1] || "txt"}</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          {/* Theme selector */}
+          <div ref={themeMenuRef} style={{ position: "relative" }}>
+            <button onClick={() => setShowThemeMenu(!showThemeMenu)} title="Change theme"
+              style={{ display: "flex", alignItems: "center", gap: "4px", padding: "6px 10px", fontSize: "12px", backgroundColor: showThemeMenu ? `${theme.accent}15` : "transparent", color: showThemeMenu ? theme.accent : theme.muted, border: `1px solid ${showThemeMenu ? theme.accent : theme.border}`, borderRadius: "6px", cursor: "pointer", transition: "all 0.2s ease" }}
+              onMouseEnter={(e) => { if (!showThemeMenu) { e.currentTarget.style.borderColor = theme.accent; e.currentTarget.style.color = theme.text; }}}
+              onMouseLeave={(e) => { if (!showThemeMenu) { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.color = theme.muted; }}}>
+              <span style={{ fontSize: "14px" }}>{(() => { const Icon = themeIcons[themeKey]; return <Icon size={15} />; })()}</span>
+            </button>
+            {showThemeMenu && (
+              <div style={{ position: "absolute", top: "calc(100% + 6px)", right: 0, backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "10px", padding: "6px", minWidth: "170px", zIndex: 50, boxShadow: "0 12px 40px -10px rgba(0,0,0,0.4)" }}>
+                <div className="font-mono" style={{ fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: theme.faint, padding: "6px 10px 4px" }}>Theme</div>
+                {(Object.keys(themes) as ThemeKey[]).map((key) => {
+                  const t = themes[key];
+                  const isActive = key === themeKey;
+                  return (
+                    <button key={key} onClick={() => { setTheme(key); setShowThemeMenu(false); }}
+                      style={{ display: "flex", alignItems: "center", gap: "8px", width: "100%", padding: "7px 10px", border: "none", borderRadius: "6px", backgroundColor: isActive ? `${theme.accent}15` : "transparent", color: isActive ? theme.accent : theme.text, cursor: "pointer", fontSize: "13px", textAlign: "left", transition: "background 0.15s ease" }}
+                      onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.backgroundColor = `${theme.text}08`; }}
+                      onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.backgroundColor = "transparent"; }}>
+                      {(() => { const Icon = themeIcons[key]; return <Icon size={14} style={{ flexShrink: 0 }} />; })()}
+                      <span className="font-body">{t.label}</span>
+                      {isActive && <span style={{ marginLeft: "auto", width: "5px", height: "5px", borderRadius: "50%", backgroundColor: theme.accent }} />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
           {/* History button */}
           <button onClick={() => setShowHistory(!showHistory)} title="Run history"
             style={{ display: "flex", alignItems: "center", gap: "4px", padding: "6px 10px", fontSize: "12px", backgroundColor: showHistory ? `${theme.accent}15` : "transparent", color: showHistory ? theme.accent : theme.muted, border: `1px solid ${showHistory ? theme.accent : theme.border}`, borderRadius: "6px", cursor: "pointer", transition: "all 0.2s ease" }}
@@ -267,7 +407,7 @@ export default function EditorPage() {
 
         {/* Left: Code Editor */}
         <div style={{ width: `${splitPos}%`, display: "flex", flexDirection: "column", border: `1px solid ${theme.border}`, borderRadius: "8px 0 0 8px", overflow: "hidden", minHeight: "400px" }}>
-          <EditorToolbar language={language} onLanguageChange={handleLanguageChange} onRun={handleRun} onSave={handleSave} isRunning={isRunning} />
+          <EditorToolbar language={language} onLanguageChange={handleLanguageChange} onRun={handleRun} isRunning={isRunning} saveStatus={saveStatus} />
           <div style={{ flex: 1, minHeight: 0 }}>
             <CodeEditor language={language} value={code} onChange={setCode} />
           </div>

@@ -13,9 +13,9 @@ export default function Hero() {
         className="font-display"
         style={{ fontSize: "clamp(60px, 10vw, 100px)", lineHeight: 1.08, fontWeight: 400, marginBottom: "20px" }}
       >
-        Every language.
+        Write code.
         <br />
-        <span style={{ fontStyle: "italic" }}>One editor.</span>
+        <span style={{ fontStyle: "italic" }}>Run it instantly.</span>
       </h1>
       <p
         className="font-body"
@@ -27,6 +27,7 @@ export default function Hero() {
       <div style={{ display: "flex", justifyContent: "center", gap: "14px", flexWrap: "wrap" }}>
         <Link
           href="/editor"
+          data-magnetic
           className="font-body"
           style={{
             fontWeight: 500,
@@ -49,6 +50,7 @@ export default function Hero() {
         </Link>
         <Link
           href="/docs"
+          data-magnetic
           className="font-body"
           style={{
             fontWeight: 500,

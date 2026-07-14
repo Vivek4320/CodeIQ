@@ -1,6 +1,7 @@
 "use client";
 
-import { Sparkles, Zap, GitBranch, Share2, Terminal, Shield, Globe, Cpu } from "lucide-react";
+import { Sparkles, Zap, GitBranch, Share2, Terminal, Shield, Globe, Cpu, ArrowLeft } from "lucide-react";
+import Link from "next/link";
 import PageLayout from "@/components/PageLayout";
 import { useTheme } from "@/components/landing/ThemeContext";
 
@@ -8,20 +9,20 @@ const FEATURES = [
   {
     icon: Sparkles,
     title: "AI Code Completion",
-    desc: "Inline suggestions that adapt to your function, your variable names, and your intent — not generic boilerplate pulled from nowhere.",
-    details: ["Context-aware suggestions", "Multi-line completions", "Learns your coding style", "Supports 6+ languages"],
+    desc: "Real-time AI-powered suggestions powered by Google Gemini. Completions adapt to your function names, variable names, and coding intent.",
+    details: ["Powered by Google Gemini AI", "Context-aware suggestions", "Works across all 10 languages", "Instant inline completions"],
   },
   {
     icon: Zap,
     title: "Instant Execution",
-    desc: "Run Python, JavaScript, C++, Java, Go, and Rust the moment you hit compile. No containers to wait on, no queue to clear.",
-    details: ["Sub-second output", "No setup required", "6 languages supported", "Real-time results"],
+    desc: "Run code in 10 languages the moment you hit Run. JavaScript and TypeScript execute live — others run through our smart simulator.",
+    details: ["Sub-second output", "10 languages supported", "No setup required", "Real-time results"],
   },
   {
     icon: GitBranch,
     title: "Auto-saved History",
-    desc: "Every run is versioned automatically. Roll back to any point without thinking about manual commits or saves.",
-    details: ["Automatic versioning", "One-click rollback", "Diff comparison", "Unlimited history"],
+    desc: "Your code is saved automatically as you type. Every run is versioned, so you can always roll back to any previous version.",
+    details: ["Auto-save as you type", "Automatic versioning", "One-click rollback", "Unlimited history"],
   },
   {
     icon: Share2,
@@ -31,27 +32,27 @@ const FEATURES = [
   },
   {
     icon: Terminal,
-    title: "Built-in Terminal",
-    desc: "Full terminal access right in the browser. Install packages, run scripts, and debug without leaving the editor.",
-    details: ["Full shell access", "Package installation", "Environment variables", "Process management"],
+    title: "10 Languages",
+    desc: "Write in JavaScript, TypeScript, Python, C, C++, Java, Go, Rust, Ruby, or Haskell — all from one editor.",
+    details: ["JavaScript & TypeScript", "Python, C & C++", "Java, Go & Rust", "Ruby & Haskell"],
   },
   {
     icon: Shield,
     title: "Secure Sandboxing",
-    desc: "Every code execution runs in an isolated sandbox. Your code never touches the host system.",
-    details: ["Isolated execution", "Resource limits", "No data persistence", "Enterprise-grade security"],
+    desc: "JavaScript and TypeScript run in an isolated VM sandbox. Your code never touches the host system.",
+    details: ["Isolated execution", "5-second timeout", "No data persistence", "Safe evaluation"],
   },
   {
     icon: Globe,
-    title: "Cloud Sync",
-    desc: "Your projects sync across devices. Start on your laptop, continue on your tablet — everything stays in sync.",
-    details: ["Cross-device sync", "Offline support", "Conflict resolution", "Real-time updates"],
+    title: "7 Game Themes",
+    desc: "Switch between Midnight, Cyberpunk, Retro Gaming, Neon Nights, Deep Ocean, Hacker, and Light Mode — all with one click.",
+    details: ["7 unique themes", "Instant switching", "Theme selector in editor", "Persists across sessions"],
   },
   {
     icon: Cpu,
     title: "Lightweight & Fast",
-    desc: "Built with performance in mind. The editor loads in under a second and stays responsive no matter the project size.",
-    details: ["<1s load time", "60fps scrolling", "Minimal memory usage", "Optimized rendering"],
+    desc: "Built with Next.js and CodeMirror. The editor loads fast and stays responsive no matter the project size.",
+    details: ["Fast load time", "60fps scrolling", "Minimal memory usage", "Optimized rendering"],
   },
 ];
 
@@ -60,6 +61,15 @@ export default function FeaturesPage() {
 
   return (
     <PageLayout>
+      {/* Back to Home */}
+      <div style={{ maxWidth: "1040px", margin: "0 auto", padding: "24px 24px 0" }}>
+        <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "8px 14px", fontSize: "12px", fontWeight: 500, color: theme.muted, backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "8px", textDecoration: "none", transition: "all 0.2s ease" }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.accent; e.currentTarget.style.color = theme.text; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.color = theme.muted; }}>
+          <ArrowLeft size={14} /> Home
+        </Link>
+      </div>
+
       {/* Hero */}
       <section style={{ maxWidth: "720px", margin: "0 auto", padding: "80px 24px 60px", textAlign: "center" }}>
         <div
@@ -86,7 +96,7 @@ export default function FeaturesPage() {
           className="font-body"
           style={{ fontSize: "17px", color: theme.muted, maxWidth: "500px", margin: "0 auto", lineHeight: 1.6 }}
         >
-          One editor, every language, and an assistant that&apos;s actually paying attention to what you&apos;re building.
+          One editor, multiple languages, and an assistant that&apos;s actually paying attention to what you&apos;re building.
         </p>
       </section>
 

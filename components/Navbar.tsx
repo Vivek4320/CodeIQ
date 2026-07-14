@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "@/components/landing/ThemeContext";
 import { themes, type ThemeKey } from "@/components/landing/theme";
+import { themeIcons } from "@/components/landing/ThemeIcons";
 import Logo from "@/components/landing/Logo";
 import { useAuth } from "@/components/AuthContext";
 
@@ -162,6 +163,7 @@ export default function Navbar() {
                       onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.backgroundColor = `${theme.text}08`; }}
                       onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.backgroundColor = "transparent"; }}
                     >
+                      {(() => { const Icon = themeIcons[key]; return <Icon size={15} style={{ flexShrink: 0 }} />; })()}
                       <span>{t.label}</span>
                       {isActive && <span style={{ marginLeft: "auto", width: "6px", height: "6px", borderRadius: "50%", backgroundColor: theme.accent }} />}
                     </button>

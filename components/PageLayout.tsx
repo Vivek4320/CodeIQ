@@ -1,8 +1,6 @@
 "use client";
 
-import { usePathname } from "next/navigation";
 import { Instrument_Serif, Inter, JetBrains_Mono } from "next/font/google";
-import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useTheme } from "@/components/landing/ThemeContext";
 
@@ -25,17 +23,12 @@ const mono = JetBrains_Mono({
 
 export default function PageLayout({ children }: { children: React.ReactNode }) {
   const { theme } = useTheme();
-  const pathname = usePathname();
-
-  // Hide navbar on login and signup pages
-  const hideNavbar = pathname === "/login" || pathname === "/signup";
 
   return (
     <div
       className={`${display.variable} ${bodyFont.variable} ${mono.variable}`}
       style={{ minHeight: "100vh", display: "flex", flexDirection: "column", backgroundColor: theme.bg, color: theme.text }}
     >
-      {!hideNavbar && <Navbar />}
       <main style={{ flex: 1 }}>{children}</main>
       <Footer />
     </div>

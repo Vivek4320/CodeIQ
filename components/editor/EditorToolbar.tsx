@@ -1,6 +1,6 @@
 "use client";
 
-import { Play, Save } from "lucide-react";
+import { Play } from "lucide-react";
 import { useTheme } from "@/components/landing/ThemeContext";
 import LanguageSelector from "./LanguageSelector";
 
@@ -8,11 +8,11 @@ interface EditorToolbarProps {
   language: string;
   onLanguageChange: (lang: string) => void;
   onRun: () => void;
-  onSave: () => void;
   isRunning: boolean;
+  saveStatus?: "idle" | "saving" | "saved";
 }
 
-export default function EditorToolbar({ language, onLanguageChange, onRun, onSave, isRunning }: EditorToolbarProps) {
+export default function EditorToolbar({ language, onLanguageChange, onRun, isRunning, saveStatus }: EditorToolbarProps) {
   const { theme } = useTheme();
 
   return (
@@ -29,13 +29,13 @@ export default function EditorToolbar({ language, onLanguageChange, onRun, onSav
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-        {/* Save */}
-        <button onClick={onSave} title="Save project"
-          style={{ display: "flex", alignItems: "center", gap: "6px", padding: "6px 12px", fontSize: "12px", fontWeight: 500, backgroundColor: "transparent", color: theme.muted, border: `1px solid ${theme.border}`, borderRadius: "6px", cursor: "pointer", transition: "all 0.2s ease" }}
-          onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.accent; e.currentTarget.style.color = theme.text; }}
-          onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.color = theme.muted; }}>
-          <Save size={14} /> Save
-        </button>
+        {/* Save status indicator */}
+        {saveStatus && saveStatus !== "idle" && (
+          <span className="font-mono" style={{ fontSize: "11px", color: saveStatus === "saving" ? "#FBBF24" : "#34D399", display: "flex", alignItems: "center", gap: "4px" }}>
+            <span style={{ width: "5px", height: "5px", borderRadius: "50%", backgroundColor: saveStatus === "saving" ? "#FBBF24" : "#34D399" }} />
+            {saveStatus === "saving" ? "Saving..." : "Saved"}
+          </span>
+        )}
 
         {/* Run */}
         <button onClick={onRun} disabled={isRunning} title="Run code"

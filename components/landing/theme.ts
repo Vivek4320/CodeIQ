@@ -15,10 +15,9 @@ export interface ThemeColors {
   navbarBg: string;
 }
 
-export const themes: Record<string, ThemeColors & { label: string; icon: string }> = {
+export const themes: Record<string, ThemeColors & { label: string }> = {
   midnight: {
     label: "Midnight",
-    icon: "🌙",
     bg: "#000000",
     panel: "#0A0A0A",
     text: "#FFFFFF",
@@ -36,7 +35,6 @@ export const themes: Record<string, ThemeColors & { label: string; icon: string 
   },
   cyberpunk: {
     label: "Cyberpunk",
-    icon: "🤖",
     bg: "#0a0014",
     panel: "#120025",
     text: "#F0E6FF",
@@ -54,7 +52,6 @@ export const themes: Record<string, ThemeColors & { label: string; icon: string 
   },
   retro: {
     label: "Retro Gaming",
-    icon: "👾",
     bg: "#1a1a2e",
     panel: "#16213e",
     text: "#EAEAEA",
@@ -72,7 +69,6 @@ export const themes: Record<string, ThemeColors & { label: string; icon: string 
   },
   neonNights: {
     label: "Neon Nights",
-    icon: "💜",
     bg: "#0B0E1A",
     panel: "#111528",
     text: "#E8EAFF",
@@ -90,7 +86,6 @@ export const themes: Record<string, ThemeColors & { label: string; icon: string 
   },
   ocean: {
     label: "Deep Ocean",
-    icon: "🌊",
     bg: "#041C2C",
     panel: "#062438",
     text: "#D4EEFF",
@@ -108,7 +103,6 @@ export const themes: Record<string, ThemeColors & { label: string; icon: string 
   },
   hacker: {
     label: "Hacker",
-    icon: "💚",
     bg: "#0D0D0D",
     panel: "#141414",
     text: "#00FF41",
@@ -126,7 +120,6 @@ export const themes: Record<string, ThemeColors & { label: string; icon: string 
   },
   lightmode: {
     label: "Light Mode",
-    icon: "☀️",
     bg: "#FFFFFF",
     panel: "#F5F5F5",
     text: "#111111",

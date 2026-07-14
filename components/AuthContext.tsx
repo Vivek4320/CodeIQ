@@ -87,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!res.ok) { alert(data.error || "Signup failed"); return false; }
     localStorage.setItem("codeiq_email", email);
     setUser(data.user);
-    router.push("/editor");
+    router.push("/");
     return true;
   }, [router]);
 
@@ -101,7 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!res.ok) { alert(data.error || "Login failed"); return false; }
     localStorage.setItem("codeiq_email", email);
     setUser(data.user);
-    router.push("/editor");
+    router.push("/");
     return true;
   }, [router]);
 
@@ -128,7 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       localStorage.setItem("codeiq_email", userData.email);
       setUser(data.user);
-      router.push("/editor");
+      router.push("/");
       return true;
     } catch {
       alert("Google sign-in failed. Please try again.");

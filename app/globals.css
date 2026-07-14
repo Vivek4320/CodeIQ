@@ -86,3 +86,102 @@ html, body {
   user-select: none;
   touch-action: none;
 }
+
+/* Custom cursor */
+*, *::before, *::after {
+  cursor: none !important;
+}
+
+.custom-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  pointer-events: none;
+  z-index: 99999;
+  transition: transform 0.1s ease, opacity 0.15s ease;
+  transform: translate(-50%, -50%);
+}
+
+.custom-cursor-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--accent);
+  pointer-events: none;
+  z-index: 99998;
+  transition: transform 0.18s ease, width 0.2s ease, height 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+  transform: translate(-50%, -50%);
+  opacity: 0.4;
+}
+
+/* Hover states */
+.custom-cursor.hovering {
+  transform: translate(-50%, -50%) scale(0.6);
+}
+
+.custom-cursor-ring.hovering {
+  width: 50px;
+  height: 50px;
+  opacity: 0.7;
+  border-color: var(--accent);
+}
+
+/* Clicking */
+.custom-cursor.clicking {
+  transform: translate(-50%, -50%) scale(0.4);
+}
+
+.custom-cursor-ring.clicking {
+  width: 28px;
+  height: 28px;
+  opacity: 0.9;
+}
+
+/* Text inputs - show text cursor indicator */
+.custom-cursor.text-mode {
+  width: 2px;
+  height: 18px;
+  border-radius: 1px;
+}
+
+.custom-cursor-ring.text-mode {
+  width: 24px;
+  height: 24px;
+  opacity: 0.3;
+}
+
+/* Click ripple */
+.cursor-ripple {
+  position: fixed;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid var(--accent);
+  pointer-events: none;
+  z-index: 99997;
+  transform: translate(-50%, -50%) scale(1);
+  animation: ripple-expand 0.6s ease-out forwards;
+}
+
+@keyframes ripple-expand {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(6);
+    opacity: 0;
+  }
+}
+
+/* Magnetic elements */
+[data-magnetic] {
+  transition: transform 0.25s ease-out;
+}

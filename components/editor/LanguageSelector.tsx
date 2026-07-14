@@ -13,6 +13,8 @@ const LANGUAGES = [
   { id: "go", label: "Go", ext: ".go" },
   { id: "rust", label: "Rust", ext: ".rs" },
   { id: "ruby", label: "Ruby", ext: ".rb" },
+  { id: "haskell", label: "Haskell", ext: ".hs" },
+  { id: "c", label: "C", ext: ".c" },
 ];
 
 interface LanguageSelectorProps {

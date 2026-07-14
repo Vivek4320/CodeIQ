@@ -50,6 +50,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ output: simulateRuby(code), error: null });
     }
 
+    // Haskell — simulated
+    if (language === "haskell") {
+      return NextResponse.json({ output: simulateHaskell(code), error: null });
+    }
+
+    // C — simulated
+    if (language === "c") {
+      return NextResponse.json({ output: simulateC(code), error: null });
+    }
+
     return NextResponse.json({ error: "Unsupported language" }, { status: 400 });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -178,10 +188,20 @@ function safeEval(expr: string): string {
   }
 }
 
+// Skip lines that are commented out
+function isCommented(trimmed: string, language: string): boolean {
+  if (language === "python" || language === "ruby") {
+    return trimmed.startsWith("#");
+  }
+  // C, C++, Java, Go, Rust, Haskell, JavaScript, TypeScript
+  return trimmed.startsWith("//");
+}
+
 function simulatePython(code: string): string[] {
   const lines: string[] = [];
   for (const line of code.split("\n")) {
     const trimmed = line.trim();
+    if (isCommented(trimmed, "python")) continue;
     const printMatch = trimmed.match(/^print\((.+)\)$/);
     if (printMatch) {
       let val = printMatch[1].trim();
@@ -209,6 +229,7 @@ function simulateCpp(code: string): string[] {
   const lines: string[] = [];
   for (const line of code.split("\n")) {
     const trimmed = line.trim();
+    if (isCommented(trimmed, "cpp")) continue;
     // std::cout << "string"
     const coutStr = trimmed.match(/std::cout\s*<<\s*"([^"]+)"/);
     if (coutStr) { lines.push(coutStr[1]); continue; }
@@ -228,6 +249,7 @@ function simulateJava(code: string): string[] {
   const lines: string[] = [];
   for (const line of code.split("\n")) {
     const trimmed = line.trim();
+    if (isCommented(trimmed, "java")) continue;
     // System.out.println("string")
     const printStr = trimmed.match(/System\.out\.println\("([^"]+)"\)/);
     if (printStr) { lines.push(printStr[1]); continue; }
@@ -251,6 +273,7 @@ function simulateGo(code: string): string[] {
   const lines: string[] = [];
   for (const line of code.split("\n")) {
     const trimmed = line.trim();
+    if (isCommented(trimmed, "go")) continue;
     const fmtStr = trimmed.match(/fmt\.Println\("([^"]+)"\)/);
     if (fmtStr) { lines.push(fmtStr[1]); continue; }
     const fmtExpr = trimmed.match(/fmt\.Println\((.+)\)/);
@@ -272,6 +295,7 @@ function simulateRust(code: string): string[] {
   const lines: string[] = [];
   for (const line of code.split("\n")) {
     const trimmed = line.trim();
+    if (isCommented(trimmed, "rust")) continue;
     // println!("string")
     const printStr = trimmed.match(/println!\("([^"]+)"\)/);
     if (printStr) { lines.push(printStr[1].replace(/\{\}/g, "")); continue; }
@@ -293,6 +317,7 @@ function simulateRuby(code: string): string[] {
   const lines: string[] = [];
   for (const line of code.split("\n")) {
     const trimmed = line.trim();
+    if (isCommented(trimmed, "ruby")) continue;
     const putsStr = trimmed.match(/^puts\s+"([^"]+)"$/);
     if (putsStr) { lines.push(putsStr[1]); continue; }
     const putsExpr = trimmed.match(/^puts\s+(.+)$/);
@@ -307,5 +332,51 @@ function simulateRuby(code: string): string[] {
   }
   if (lines.length === 0) lines.push("(no output)");
   lines.push("", "Process exited with code 0");
+  return lines;
+}
+
+function simulateHaskell(code: string): string[] {
+  const lines: string[] = [];
+  for (const line of code.split("\n")) {
+    const trimmed = line.trim();
+    if (isCommented(trimmed, "haskell")) continue;
+    // putStrLn "string"
+    const putStrLnStr = trimmed.match(/putStrLn\s+"([^"]+)"/);
+    if (putStrLnStr) { lines.push(putStrLnStr[1]); continue; }
+    // putStrLn expr
+    const putStrLnExpr = trimmed.match(/putStrLn\s+(\w+)/);
+    if (putStrLnExpr) { lines.push(putStrLnExpr[1]); continue; }
+    // print expr
+    const printMatch = trimmed.match(/^print\s+(.+)$/);
+    if (printMatch) { lines.push(safeEval(printMatch[1].trim())); continue; }
+    // putStr "string"
+    const putStrMatch = trimmed.match(/putStr\s+"([^"]+)"/);
+    if (putStrMatch) { lines.push(putStrMatch[1]); continue; }
+  }
+  if (lines.length === 0) lines.push("(no output)");
+  lines.push("", "Compiling...", "Linking...", "Process exited with code 0");
+  return lines;
+}
+
+function simulateC(code: string): string[] {
+  const lines: string[] = [];
+  for (const line of code.split("\n")) {
+    const trimmed = line.trim();
+    if (isCommented(trimmed, "c")) continue;
+    // printf("string")
+    const printfStr = trimmed.match(/printf\s*\(\s*"([^"]+)"\s*\)/);
+    if (printfStr) { lines.push(printfStr[1].replace(/\\n/g, "")); continue; }
+    // printf("%d", expr)
+    const printfExpr = trimmed.match(/printf\s*\(\s*"%d"\s*,\s*(.+)\s*\)/);
+    if (printfExpr) { lines.push(safeEval(printfExpr[1].trim())); continue; }
+    // printf("%f", expr)
+    const printfFloat = trimmed.match(/printf\s*\(\s*"%f"\s*,\s*(.+)\s*\)/);
+    if (printfFloat) { lines.push(safeEval(printfFloat[1].trim())); continue; }
+    // printf("%s", str)
+    const printfStr2 = trimmed.match(/printf\s*\(\s*"%s"\s*,\s*"([^"]+)"\s*\)/);
+    if (printfStr2) { lines.push(printfStr2[1]); continue; }
+  }
+  if (lines.length === 0) lines.push("(no output)");
+  lines.push("", "Compiling...", "Build succeeded", "Process exited with code 0");
   return lines;
 }

@@ -34,7 +34,7 @@ export default function Features() {
           Everything you need to write, run, and share code.
         </h2>
         <p className="text-[#5B6472] mb-12 max-w-lg">
-          One editor, every language, and an assistant that&apos;s actually paying attention.
+          One editor, multiple languages, and an assistant that&apos;s actually paying attention.
         </p>
         <div className="grid md:grid-cols-2 gap-6">
           {FEATURES.map(({ icon: Icon, title, desc }) => (
