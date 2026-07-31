@@ -103,23 +103,16 @@ Open [http://localhost:3000](http://localhost:3000)
 ### Environment Variables
 
 ```env
-# Database (Supabase PostgreSQL)
-DATABASE_URL=postgresql://postgres:password@db.xxx.supabase.co:5432/postgres
+# Database
+DATABASE_URL=your_database_url
 
-# Google OAuth (optional)
+# Authentication
 GOOGLE_CLIENT_ID=your_client_id
 GOOGLE_CLIENT_SECRET=your_client_secret
-NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_client_id
 
-# AI Agent (KeyKing)
+# AI Agent
 KK_VAULT=your_vault
 KK_VAULT_PASS=your_password
-
-# Admin
-ADMIN_EMAIL=your@email.com
-
-# Code Execution (optional)
-PISTON_API_URL=https://emkc.org/api/v2
 ```
 
 ---
@@ -140,40 +133,6 @@ PISTON_API_URL=https://emkc.org/api/v2
 | Haskell | stack | — | ✅ |
 | HTML | — | — | — |
 | CSS | — | — | — |
-
----
-
-## Admin Panel
-
-Access the admin dashboard at `/admin/login`
-
-```
-Admin Credentials:
-Email:    admin@codeiq.com
-Password: admin@codeiq
-```
-
-**Dashboard Features:**
-- 📊 Real-time analytics (users, runs, error rates)
-- 🔧 Language management (add/edit/remove languages live)
-- 👥 User management (view, promote, ban)
-- 💬 Feedback review system
-
----
-
-## API Reference
-
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| `POST` | `/api/auth/signup` | Create account | No |
-| `POST` | `/api/auth/login` | Sign in | No |
-| `POST` | `/api/auth/google` | Google OAuth | No |
-| `GET` | `/api/languages` | List active languages | No |
-| `POST` | `/api/execute` | Execute code | No |
-| `POST` | `/api/preview` | Generate HTML preview | No |
-| `POST` | `/api/projects` | Save project | Yes |
-| `GET` | `/api/projects` | List user projects | Yes |
-| `POST` | `/api/agent` | AI code assistant | Yes |
 
 ---
 
