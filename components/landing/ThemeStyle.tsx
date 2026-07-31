@@ -2,13 +2,17 @@
 
 import { useTheme } from "./ThemeContext";
 
-/**
- * Injects a <style> tag that sets CSS custom properties on :root
- * based on the active theme, so globals.css and any Tailwind
- * utilities that reference these vars stay in sync.
- */
+function hexToRgb(hex: string): string {
+  const h = hex.replace("#", "");
+  const r = parseInt(h.substring(0, 2), 16);
+  const g = parseInt(h.substring(2, 4), 16);
+  const b = parseInt(h.substring(4, 6), 16);
+  return `${r}, ${g}, ${b}`;
+}
+
 export function ThemeStyle() {
   const { theme } = useTheme();
+  const rgb = hexToRgb(theme.accent);
 
   const css = `
     :root {
@@ -19,6 +23,7 @@ export function ThemeStyle() {
       --faint: ${theme.faint};
       --border: ${theme.border};
       --accent: ${theme.accent};
+      --accent-rgb: ${rgb};
       --accent-hover: ${theme.accentHover};
       --card-bg: ${theme.cardBg};
       --card-border: ${theme.cardBorder};

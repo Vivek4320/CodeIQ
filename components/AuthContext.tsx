@@ -11,36 +11,22 @@ interface AuthUser {
 
 interface AuthContextValue {
   user: AuthUser | null;
-  login: (email: string, password: string) => Promise<boolean>;
-  signup: (name: string, email: string, password: string) => Promise<boolean>;
-  loginWithGoogle: (credential: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
+  signup: (name: string, email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
+  loginWithGoogle: (credential: string) => Promise<{ ok: boolean; error?: string }>;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue>({
   user: null,
-  login: async () => false,
-  signup: async () => false,
-  loginWithGoogle: async () => false,
+  login: async () => ({ ok: false }),
+  signup: async () => ({ ok: false }),
+  loginWithGoogle: async () => ({ ok: false }),
   logout: () => {},
 });
 
 const PUBLIC_PAGES = ["/", "/login", "/signup"];
 const PROTECTED_PAGES = ["/features", "/docs", "/dashboard", "/editor"];
-
-// Decode Google JWT token (no verification for demo — in production use a library)
-function decodeGoogleJWT(token: string) {
-  try {
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    return {
-      name: payload.name || "",
-      email: payload.email || "",
-      image: payload.picture || "",
-    };
-  } catch {
-    return null;
-  }
-}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -78,67 +64,64 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user, loading, pathname, router]);
 
   const signup = useCallback(async (name: string, email: string, password: string) => {
-    const res = await fetch("/api/auth/signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password }),
-    });
-    const data = await res.json();
-    if (!res.ok) { alert(data.error || "Signup failed"); return false; }
-    localStorage.setItem("codeiq_email", email);
-    setUser(data.user);
-    router.push("/");
-    return true;
+    try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { ok: false, error: data.error || "Signup failed" };
+      localStorage.setItem("codeiq_email", email);
+      setUser(data.user);
+      router.push("/");
+      return { ok: true };
+    } catch {
+      return { ok: false, error: "Network error. Please try again." };
+    }
   }, [router]);
 
   const login = useCallback(async (email: string, password: string) => {
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-    const data = await res.json();
-    if (!res.ok) { alert(data.error || "Login failed"); return false; }
-    localStorage.setItem("codeiq_email", email);
-    setUser(data.user);
-    router.push("/");
-    return true;
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { ok: false, error: data.error || "Login failed" };
+      localStorage.setItem("codeiq_email", email);
+      setUser(data.user);
+      router.push("/");
+      return { ok: true };
+    } catch {
+      return { ok: false, error: "Network error. Please try again." };
+    }
   }, [router]);
 
-  // Google sign-in — receives JWT credential from Google
+  // Google sign-in — sends raw JWT to server for verification
   const loginWithGoogle = useCallback(async (credential: string) => {
-    const userData = decodeGoogleJWT(credential);
-    if (!userData || !userData.email) {
-      alert("Google sign-in failed. Please try again.");
-      return false;
-    }
-
     try {
       const res = await fetch("/api/auth/google", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(userData),
+        body: JSON.stringify({ credential }),
       });
       const data = await res.json();
 
-      if (!res.ok) {
-        alert(data.error || "Google sign-in failed");
-        return false;
-      }
+      if (!res.ok) return { ok: false, error: data.error || "Google sign-in failed" };
 
-      localStorage.setItem("codeiq_email", userData.email);
+      localStorage.setItem("codeiq_email", data.user.email);
       setUser(data.user);
       router.push("/");
-      return true;
+      return { ok: true };
     } catch {
-      alert("Google sign-in failed. Please try again.");
-      return false;
+      return { ok: false, error: "Google sign-in failed. Please try again." };
     }
   }, [router]);
 
   const logout = useCallback(() => {
     localStorage.removeItem("codeiq_email");
-    // Clear Google sign-in state
     if (window.google?.accounts?.id) {
       window.google.accounts.id.disableAutoSelect();
     }

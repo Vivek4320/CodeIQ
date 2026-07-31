@@ -3,18 +3,21 @@
 import { useState, useRef, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 import { useTheme } from "@/components/landing/ThemeContext";
+import LanguageLogo from "@/components/LanguageLogo";
 
-const LANGUAGES = [
-  { id: "javascript", label: "JavaScript", ext: ".js" },
-  { id: "typescript", label: "TypeScript", ext: ".ts" },
-  { id: "python", label: "Python", ext: ".py" },
-  { id: "cpp", label: "C++", ext: ".cpp" },
-  { id: "java", label: "Java", ext: ".java" },
-  { id: "go", label: "Go", ext: ".go" },
-  { id: "rust", label: "Rust", ext: ".rs" },
-  { id: "ruby", label: "Ruby", ext: ".rb" },
-  { id: "haskell", label: "Haskell", ext: ".hs" },
-  { id: "c", label: "C", ext: ".c" },
+const FALLBACK_LANGUAGES = [
+  { slug: "javascript", name: "JavaScript", extension: ".js" },
+  { slug: "typescript", name: "TypeScript", extension: ".ts" },
+  { slug: "python", name: "Python", extension: ".py" },
+  { slug: "cpp", name: "C++", extension: ".cpp" },
+  { slug: "java", name: "Java", extension: ".java" },
+  { slug: "go", name: "Go", extension: ".go" },
+  { slug: "rust", name: "Rust", extension: ".rs" },
+  { slug: "ruby", name: "Ruby", extension: ".rb" },
+  { slug: "haskell", name: "Haskell", extension: ".hs" },
+  { slug: "c", name: "C", extension: ".c" },
+  { slug: "html", name: "HTML", extension: ".html" },
+  { slug: "css", name: "CSS", extension: ".css" },
 ];
 
 interface LanguageSelectorProps {
@@ -26,6 +29,15 @@ export default function LanguageSelector({ language, onSelect }: LanguageSelecto
   const { theme } = useTheme();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const [languages, setLanguages] = useState(FALLBACK_LANGUAGES);
+
+  useEffect(() => {
+    fetch("/api/languages").then(r => r.json()).then(d => {
+      if (d.languages && d.languages.length > 0) {
+        setLanguages(d.languages);
+      }
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -35,24 +47,25 @@ export default function LanguageSelector({ language, onSelect }: LanguageSelecto
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open]);
 
-  const current = LANGUAGES.find((l) => l.id === language)!;
+  const current = languages.find((l) => l.slug === language) || languages[0];
 
   return (
     <div ref={ref} style={{ position: "relative" }}>
       <button
         onClick={() => setOpen(!open)}
         style={{
-          display: "flex", alignItems: "center", gap: "6px",
-          padding: "6px 12px", fontSize: "13px", fontWeight: 500,
+          display: "flex", alignItems: "center", gap: "8px",
+          padding: "5px 12px", fontSize: "13px", fontWeight: 500,
           backgroundColor: "transparent", color: theme.text,
-          border: `1px solid ${theme.border}`, borderRadius: "6px",
+          border: `1px solid ${theme.border}`, borderRadius: "8px",
           cursor: "pointer", transition: "border-color 0.2s ease",
         }}
         onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.accent; }}
         onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; }}
       >
-        <span className="font-mono">{current.label}</span>
-        <ChevronDown size={14} style={{ transform: open ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s ease" }} />
+        <LanguageLogo language={language} size={20} />
+        <span className="font-mono">{current.name}</span>
+        <ChevronDown size={14} style={{ transform: open ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s ease", color: theme.faint }} />
       </button>
 
       {open && (
@@ -60,27 +73,28 @@ export default function LanguageSelector({ language, onSelect }: LanguageSelecto
           style={{
             position: "absolute", top: "calc(100% + 6px)", left: 0,
             backgroundColor: theme.panel, border: `1px solid ${theme.border}`,
-            borderRadius: "8px", padding: "4px", minWidth: "160px", zIndex: 50,
-            boxShadow: "0 10px 40px -10px rgba(0,0,0,0.4)",
+            borderRadius: "10px", padding: "6px", minWidth: "200px", maxHeight: "320px", overflow: "auto", zIndex: 50,
+            boxShadow: "0 12px 40px -8px rgba(0,0,0,0.4)",
           }}
         >
-          {LANGUAGES.map((lang) => (
+          {languages.map((lang) => (
             <button
-              key={lang.id}
-              onClick={() => { onSelect(lang.id); setOpen(false); }}
+              key={lang.slug}
+              onClick={() => { onSelect(lang.slug); setOpen(false); }}
               style={{
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-                width: "100%", padding: "8px 12px", border: "none", borderRadius: "6px",
-                backgroundColor: language === lang.id ? `${theme.accent}15` : "transparent",
-                color: language === lang.id ? theme.accent : theme.text,
+                display: "flex", alignItems: "center", gap: "10px",
+                width: "100%", padding: "7px 10px", border: "none", borderRadius: "6px",
+                backgroundColor: language === lang.slug ? `${theme.accent}15` : "transparent",
+                color: language === lang.slug ? theme.accent : theme.text,
                 cursor: "pointer", fontSize: "13px", textAlign: "left",
                 transition: "background 0.15s ease",
               }}
-              onMouseEnter={(e) => { if (language !== lang.id) e.currentTarget.style.backgroundColor = `${theme.text}08`; }}
-              onMouseLeave={(e) => { if (language !== lang.id) e.currentTarget.style.backgroundColor = "transparent"; }}
+              onMouseEnter={(e) => { if (language !== lang.slug) e.currentTarget.style.backgroundColor = `${theme.text}08`; }}
+              onMouseLeave={(e) => { if (language !== lang.slug) e.currentTarget.style.backgroundColor = "transparent"; }}
             >
-              <span className="font-body">{lang.label}</span>
-              <span className="font-mono" style={{ fontSize: "11px", color: theme.faint }}>{lang.ext}</span>
+              <LanguageLogo language={lang.slug} size={22} />
+              <span className="font-body" style={{ flex: 1 }}>{lang.name}</span>
+              <span className="font-mono" style={{ fontSize: "10px", color: theme.faint, backgroundColor: `${theme.text}08`, padding: "2px 6px", borderRadius: "4px" }}>{lang.extension}</span>
             </button>
           ))}
         </div>

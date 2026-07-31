@@ -6,9 +6,9 @@ import { useTheme } from "./ThemeContext";
 const CARDS = [
   {
     icon: Code2,
-    number: "10",
+    number: "12",
     title: "Languages",
-    desc: "JavaScript, TypeScript, Python, C, C++, Java, Go, Rust, Ruby, Haskell — one editor for all.",
+    desc: "JavaScript, TypeScript, Python, C, C++, Java, Go, Rust, Ruby, Haskell, HTML, CSS — one editor for all.",
     accent: "#61AFEF",
   },
   {
@@ -21,8 +21,8 @@ const CARDS = [
   {
     icon: Sparkles,
     number: "AI",
-    title: "Smart completions",
-    desc: "Gemini-powered suggestions that understand your code context in real time.",
+    title: "AI Agent",
+    desc: "Chat with CodeIQ — write code, fix bugs, explain logic. Powered by KeyKing with auto-fallback routing.",
     accent: "#C678DD",
   },
   {
@@ -84,16 +84,20 @@ export default function HorizontalCards() {
                 borderRadius: "12px",
                 padding: "24px",
                 backgroundColor: theme.panel,
-                transition: "all 0.25s ease",
+                transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
                 cursor: "default",
+                position: "relative",
+                overflow: "hidden",
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.borderColor = accent;
-                e.currentTarget.style.transform = "translateY(-2px)";
+                e.currentTarget.style.transform = "translateY(-4px)";
+                e.currentTarget.style.boxShadow = `0 12px 40px -8px ${accent}25`;
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.borderColor = theme.border;
                 e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "none";
               }}
             >
               {/* Icon + Number */}

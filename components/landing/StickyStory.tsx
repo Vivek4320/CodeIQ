@@ -21,7 +21,7 @@ def clean_palindrome(s):
     icon: Zap,
     tag: "02 — Execution",
     title: "Runs the second you hit compile",
-    desc: "Six languages. No containers to spin up, no queue to wait in. Output prints in under a second.",
+    desc: "12 languages. No containers to spin up, no queue to wait in. Output prints in under a second.",
     code: `$ run main.cpp
 
 > Build succeeded

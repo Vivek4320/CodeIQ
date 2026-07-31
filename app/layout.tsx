@@ -5,7 +5,9 @@ import { ThemeProvider } from "@/components/landing/ThemeContext";
 import { ThemeStyle } from "@/components/landing/ThemeStyle";
 import { AuthProvider } from "@/components/AuthContext";
 import { ToastProvider } from "@/components/Toast";
-import CustomCursor from "@/components/CustomCursor";
+import ConditionalCursor from "@/components/ConditionalCursor";
+import LoadingScreen from "@/components/LoadingScreen";
+import FeedbackTrigger from "@/components/FeedbackTrigger";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,13 +35,15 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <CustomCursor />
+        <LoadingScreen />
+        <ConditionalCursor />
         <ThemeProvider>
           <ThemeStyle />
           <AuthProvider>
             <ToastProvider>
               {children}
             </ToastProvider>
+            <FeedbackTrigger />
           </AuthProvider>
         </ThemeProvider>
       </body>

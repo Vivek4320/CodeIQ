@@ -1,39 +1,25 @@
 import { NextResponse } from "next/server";
-import pool from "@/lib/db";
-
-// Ensure users table exists
-async function ensureTable() {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      name VARCHAR(255) NOT NULL,
-      email VARCHAR(255) UNIQUE NOT NULL,
-      password VARCHAR(255) NOT NULL,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-}
+import { query } from "@/lib/db";
 
 export async function POST(req: Request) {
   try {
-    await ensureTable();
     const { name, email, password } = await req.json();
 
     if (!name || !email || !password) {
       return NextResponse.json({ error: "All fields are required" }, { status: 400 });
     }
 
-    const [existing] = await pool.query("SELECT id FROM users WHERE email = ?", [email]);
-    if ((existing as any[]).length > 0) {
+    const existing = await query("SELECT id FROM users WHERE email = $1", [email]);
+    if (existing.length > 0) {
       return NextResponse.json({ error: "Email already registered" }, { status: 409 });
     }
 
-    const [result] = await pool.query(
-      "INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
+    const result = await query(
+      "INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING id",
       [name, email, password]
     );
 
-    const userId = (result as any).insertId;
+    const userId = result[0].id;
 
     return NextResponse.json({
       user: { id: userId, name, email },

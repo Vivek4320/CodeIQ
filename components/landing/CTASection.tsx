@@ -5,9 +5,9 @@ import Link from "next/link";
 import { useTheme } from "./ThemeContext";
 
 const STATS = [
-  { value: "10", label: "Languages" },
-  { value: "0", label: "Setup required" },
-  { value: "<1s", label: "Run time" },
+  { value: "12", label: "Languages supported" },
+  { value: "<1s", label: "Average run time" },
+  { value: "100%", label: "Free forever" },
 ];
 
 const HIGHLIGHTS = [

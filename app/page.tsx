@@ -1,11 +1,7 @@
 import { Instrument_Serif, Inter, JetBrains_Mono } from "next/font/google";
 import Navbar from "@/components/Navbar";
-import Hero from "@/components/landing/Hero";
-import MarqueeTicker from "@/components/landing/MarqueeTicker";
-import StickyStory from "@/components/landing/StickyStory";
-import HorizontalCards from "@/components/landing/HorizontalCards";
-import CTASection from "@/components/landing/CTASection";
 import Footer from "@/components/Footer";
+import LandingSections from "@/components/landing/LandingSections";
 
 const display = Instrument_Serif({
   subsets: ["latin"],
@@ -31,13 +27,7 @@ export default function LandingPage() {
       style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}
     >
       <Navbar />
-      <main style={{ flex: 1 }}>
-        <Hero />
-        <MarqueeTicker />
-        <StickyStory />
-        <HorizontalCards />
-        <CTASection />
-      </main>
+      <LandingSections />
       <Footer />
     </div>
   );

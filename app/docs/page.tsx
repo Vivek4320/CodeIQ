@@ -15,7 +15,7 @@ const SECTIONS = [
     content: {
       heading: "Getting Started with CodeIQ",
       paragraphs: [
-        "CodeIQ is a browser-based code editor that lets you write, run, and share code in 10 languages — no setup required.",
+        "CodeIQ is a browser-based code editor that lets you write, run, and share code in 12 languages — no setup required.",
         "Simply open the editor, pick your language, and start coding. Your code is auto-saved as you type, and you can run it instantly.",
       ],
       code: `// Welcome to CodeIQ!
@@ -54,7 +54,7 @@ console.log(greet("World"));`,
     content: {
       heading: "Supported Languages",
       paragraphs: [
-        "CodeIQ supports 10 popular programming languages out of the box.",
+        "CodeIQ supports 12 popular programming languages out of the box.",
         "JavaScript and TypeScript execute live in a Node.js VM. All other languages run through our smart simulator that parses output statements.",
       ],
       languages: [
@@ -68,6 +68,8 @@ console.log(greet("World"));`,
         { name: "Rust", version: "1.74", status: "Simulated" },
         { name: "Ruby", version: "3.2", status: "Simulated" },
         { name: "Haskell", version: "9.6", status: "Simulated" },
+        { name: "HTML", version: "5", status: "Live preview" },
+        { name: "CSS", version: "3", status: "Live preview" },
       ],
     },
   },
@@ -78,15 +80,16 @@ console.log(greet("World"));`,
     content: {
       heading: "AI Code Completion",
       paragraphs: [
-        "CodeIQ uses Google Gemini to provide real-time AI-powered code completions. As you type, suggestions appear based on your code context.",
-        "AI completions are marked with an \"(AI)\" badge. Static keyword completions are always available as fallback, even without an API key.",
+        "CodeIQ uses KeyKing for zero-trust AI-powered code completions. As you type, suggestions appear based on your code context — no raw API keys needed.",
+        "AI completions are marked with an \"(AI)\" badge. Static keyword completions are always available as fallback.",
       ],
-      code: `// To enable AI completion:
-// 1. Get a free API key from Google AI Studio
-//    https://aistudio.google.com/apikey
-// 2. Add it to .env.local:
-//    GEMINI_API_KEY=your_key_here
-// 3. Restart the dev server
+      code: `// AI completions are powered by KeyKing
+// No API key setup needed — KeyKing handles routing
+
+// Export vault from KeyKing Desktop App
+// (Settings > Export Vault) and set in .env.local:
+//   KK_VAULT=KK_VAULT_eyJhbGciOiJIUzI1NiIs...
+//   KK_VAULT_PASS=your-vault-password
 
 // AI completions appear as you type
 // They adapt to your code context

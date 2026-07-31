@@ -1,8 +1,8 @@
 # CodeIQ
 
-> Every language. One editor.
+> Code Smarter. Run Faster.
 
-CodeIQ is a browser-based code editor that lets you write, run, and share code in 8+ languages — no setup required.
+CodeIQ is a browser-based code editor that lets you write, run, and share code in 12 languages — no setup required.
 
 ## 🚀 Features
 
@@ -22,6 +22,7 @@ CodeIQ is a browser-based code editor that lets you write, run, and share code i
 | [TypeScript](https://www.typescriptlang.org) | Type safety |
 | [Tailwind CSS 4](https://tailwindcss.com) | Styling |
 | [MySQL (Railway)](https://railway.app) | Database |
+| [KeyKing](https://github.com/Malaybhai11/keyking) | Zero-trust AI routing (no API keys) |
 | [Lucide React](https://lucide.dev) | Icons |
 
 ## 📁 Project Structure
@@ -103,6 +104,10 @@ Create `.env.local` file:
 
 ```env
 DATABASE_URL=mysql://username:password@host:port/database_name
+
+# KeyKing AI — export vault from KeyKing Desktop App (Settings > Export Vault)
+KK_VAULT=KK_VAULT_eyJhbGciOiJIUzI1NiIs...
+KK_VAULT_PASS=your-vault-password
 ```
 
 ### Database Setup

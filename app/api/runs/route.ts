@@ -1,25 +1,9 @@
 import { NextResponse } from "next/server";
-import pool from "@/lib/db";
+import { query, tablesReady } from "@/lib/db";
 
-async function ensureTable() {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS run_history (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      user_id INT NOT NULL,
-      project_name VARCHAR(255) NOT NULL,
-      language VARCHAR(50) NOT NULL,
-      code LONGTEXT NOT NULL,
-      output LONGTEXT,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-    )
-  `);
-}
-
-// GET — fetch run history
 export async function GET(req: Request) {
   try {
-    await ensureTable();
+    await tablesReady;
     const { searchParams } = new URL(req.url);
     const email = searchParams.get("email");
     const projectName = searchParams.get("project");
@@ -28,21 +12,20 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
     }
 
-    const [userRows] = await pool.query("SELECT id FROM users WHERE email = ?", [email]);
-    const users = userRows as any[];
+    const users = await query("SELECT id FROM users WHERE email = $1", [email]);
     if (users.length === 0) return NextResponse.json({ runs: [] });
 
-    let query = "SELECT id, project_name, language, code, output, created_at FROM run_history WHERE user_id = ?";
+    let sql = "SELECT id, project_name, language, code, output, created_at FROM run_history WHERE user_id = $1";
     const params: any[] = [users[0].id];
 
     if (projectName) {
-      query += " AND project_name = ?";
+      sql += " AND project_name = $2";
       params.push(projectName);
     }
 
-    query += " ORDER BY created_at DESC LIMIT 50";
+    sql += " ORDER BY created_at DESC LIMIT 50";
 
-    const [runs] = await pool.query(query, params);
+    const runs = await query(sql, params);
     return NextResponse.json({ runs });
   } catch (error: any) {
     console.error("Get runs error:", error);
@@ -50,26 +33,24 @@ export async function GET(req: Request) {
   }
 }
 
-// POST — save a run
 export async function POST(req: Request) {
   try {
-    await ensureTable();
+    await tablesReady;
     const { email, projectName, language, code, output } = await req.json();
 
     if (!email || !projectName || !language || code === undefined) {
       return NextResponse.json({ error: "All fields are required" }, { status: 400 });
     }
 
-    const [userRows] = await pool.query("SELECT id FROM users WHERE email = ?", [email]);
-    const users = userRows as any[];
+    const users = await query("SELECT id FROM users WHERE email = $1", [email]);
     if (users.length === 0) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
-    const [result] = await pool.query(
-      "INSERT INTO run_history (user_id, project_name, language, code, output) VALUES (?, ?, ?, ?, ?)",
+    const result = await query(
+      "INSERT INTO run_history (user_id, project_name, language, code, output) VALUES ($1, $2, $3, $4, $5) RETURNING id",
       [users[0].id, projectName, language, code, JSON.stringify(output || [])]
     );
 
-    return NextResponse.json({ runId: (result as any).insertId, message: "Run saved" });
+    return NextResponse.json({ runId: result[0].id, message: "Run saved" });
   } catch (error: any) {
     console.error("Save run error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });

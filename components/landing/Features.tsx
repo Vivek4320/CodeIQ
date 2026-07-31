@@ -1,4 +1,7 @@
+"use client";
+
 import { Sparkles, Zap, GitBranch, Share2 } from "lucide-react";
+import { useTheme } from "./ThemeContext";
 
 const FEATURES = [
   {
@@ -9,7 +12,7 @@ const FEATURES = [
   {
     icon: Zap,
     title: "Instant execution",
-    desc: "Run Python, JavaScript, C++, Java, Go, and Rust the moment you hit compile. No containers to wait on.",
+    desc: "Run Python, JavaScript, C++, Java, Go, Rust, HTML, and CSS the moment you hit compile. No containers to wait on.",
   },
   {
     icon: GitBranch,
@@ -24,29 +27,51 @@ const FEATURES = [
 ];
 
 export default function Features() {
+  const { theme } = useTheme();
+
   return (
-    <section id="features" className="border-t border-[#E3E6EC] bg-[#FAFBFC]">
-      <div className="max-w-6xl mx-auto px-6 py-24">
+    <section id="features" style={{ borderTop: `1px solid ${theme.border}`, backgroundColor: theme.panel }}>
+      <div style={{ maxWidth: "1040px", margin: "0 auto", padding: "96px 24px" }}>
         <h2
-          className="text-3xl font-semibold mb-3 tracking-tight"
-          style={{ fontFamily: "var(--font-display)" }}
+          className="font-display"
+          style={{ fontSize: "clamp(28px, 4vw, 38px)", fontWeight: 400, marginBottom: "12px", lineHeight: 1.15 }}
         >
-          Everything you need to write, run, and share code.
+          Everything you need to write,<br />
+          <span style={{ fontStyle: "italic" }}>run, and share code.</span>
         </h2>
-        <p className="text-[#5B6472] mb-12 max-w-lg">
+        <p className="font-body" style={{ fontSize: "15px", color: theme.muted, marginBottom: "48px", maxWidth: "440px", lineHeight: 1.65 }}>
           One editor, multiple languages, and an assistant that&apos;s actually paying attention.
         </p>
-        <div className="grid md:grid-cols-2 gap-6">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px" }}>
           {FEATURES.map(({ icon: Icon, title, desc }) => (
             <div
               key={title}
-              className="rounded-xl border border-[#E3E6EC] bg-white p-6 hover:border-[#1B3A6B]/30 hover:shadow-[0_8px_24px_-8px_rgba(15,20,32,0.08)] transition-all"
+              style={{
+                borderRadius: "12px",
+                border: `1px solid ${theme.border}`,
+                backgroundColor: theme.bg,
+                padding: "28px",
+                transition: "all 0.25s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = `${theme.accent}40`;
+                e.currentTarget.style.transform = "translateY(-2px)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = theme.border;
+                e.currentTarget.style.transform = "translateY(0)";
+              }}
             >
-              <div className="w-9 h-9 rounded-lg bg-[#EEF2F8] flex items-center justify-center mb-4">
-                <Icon size={18} className="text-[#1B3A6B]" />
+              <div style={{
+                width: "40px", height: "40px", borderRadius: "10px",
+                backgroundColor: `${theme.accent}12`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                marginBottom: "20px",
+              }}>
+                <Icon size={18} style={{ color: theme.accent }} />
               </div>
-              <h3 className="font-semibold text-base mb-2">{title}</h3>
-              <p className="text-sm text-[#5B6472] leading-relaxed">{desc}</p>
+              <h3 className="font-body" style={{ fontSize: "16px", fontWeight: 600, marginBottom: "10px", color: theme.text }}>{title}</h3>
+              <p className="font-body" style={{ fontSize: "13.5px", color: theme.muted, lineHeight: 1.65 }}>{desc}</p>
             </div>
           ))}
         </div>

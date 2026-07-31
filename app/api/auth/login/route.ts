@@ -1,30 +1,15 @@
 import { NextResponse } from "next/server";
-import pool from "@/lib/db";
-
-// Ensure users table exists
-async function ensureTable() {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      name VARCHAR(255) NOT NULL,
-      email VARCHAR(255) UNIQUE NOT NULL,
-      password VARCHAR(255) NOT NULL,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-}
+import { query } from "@/lib/db";
 
 export async function POST(req: Request) {
   try {
-    await ensureTable();
     const { email, password } = await req.json();
 
     if (!email || !password) {
       return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
     }
 
-    const [rows] = await pool.query("SELECT id, name, email FROM users WHERE email = ? AND password = ?", [email, password]);
-    const users = rows as any[];
+    const users = await query("SELECT id, name, email FROM users WHERE email = $1 AND password = $2", [email, password]);
 
     if (users.length === 0) {
       return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });

@@ -2,7 +2,7 @@
 
 import { useTheme } from "./ThemeContext";
 
-const LANGS = ["Python", "JavaScript", "C++", "Java", "Go", "Rust", "TypeScript", "Ruby"];
+const LANGS = ["Python", "JavaScript", "C++", "Java", "Go", "Rust", "TypeScript", "Ruby", "HTML", "CSS", "Haskell", "C"];
 
 export default function MarqueeTicker() {
   const { theme } = useTheme();

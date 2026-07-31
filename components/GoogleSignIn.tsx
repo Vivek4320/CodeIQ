@@ -14,25 +14,43 @@ interface GoogleSignInProps {
   text?: string;
 }
 
+// Module-level flag to ensure initialize() is only called ONCE
+let googleInitialized = false;
+let googleCallback: ((response: any) => void) | null = null;
+
 export default function GoogleSignIn({ onSuccess, text = "Continue with Google" }: GoogleSignInProps) {
   const { theme } = useTheme();
   const buttonRef = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
+  const [scriptLoaded, setScriptLoaded] = useState(false);
+  const [scriptError, setScriptError] = useState(false);
+
+  // Keep callback reference fresh without re-initializing
+  useEffect(() => {
+    googleCallback = (response: any) => {
+      if (response.credential) {
+        onSuccess(response.credential);
+      }
+    };
+  }, [onSuccess]);
 
   const renderButton = useCallback(() => {
     if (!window.google?.accounts?.id || !buttonRef.current) return;
 
-    // Clear any existing button
-    buttonRef.current.innerHTML = "";
+    // Initialize only ONCE at module level
+    if (!googleInitialized) {
+      window.google.accounts.id.initialize({
+        client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "1098781764912-2n733kra4t7rq7s7udpp0mc8cdqc0ema.apps.googleusercontent.com",
+        callback: (response: any) => {
+          // Always delegate to the latest callback
+          if (googleCallback) googleCallback(response);
+        },
+      });
+      googleInitialized = true;
+    }
 
-    window.google.accounts.id.initialize({
-      client_id: "1098781764912-2n733kra4t7rq7s7udpp0mc8cdqc0ema.apps.googleusercontent.com",
-      callback: (response: any) => {
-        if (response.credential) {
-          onSuccess(response.credential);
-        }
-      },
-    });
+    // Clear any existing button content
+    buttonRef.current.innerHTML = "";
 
     window.google.accounts.id.renderButton(buttonRef.current, {
       theme: "outline",
@@ -42,40 +60,45 @@ export default function GoogleSignIn({ onSuccess, text = "Continue with Google" 
     });
 
     setReady(true);
-  }, [onSuccess]);
+  }, []);
 
   useEffect(() => {
-    // Check if Google script is already loaded
+    // If script is already loaded, just render
     if (window.google?.accounts?.id) {
+      setScriptLoaded(true);
       renderButton();
       return;
     }
 
-    // Load script
+    // Check if script tag already exists
     const existingScript = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
     if (existingScript) {
-      // Script exists, wait for it
       const checkReady = setInterval(() => {
         if (window.google?.accounts?.id) {
           clearInterval(checkReady);
+          setScriptLoaded(true);
           renderButton();
         }
       }, 100);
       return () => clearInterval(checkReady);
     }
 
+    // Load the Google GSI script
     const script = document.createElement("script");
     script.src = "https://accounts.google.com/gsi/client";
     script.async = true;
     script.defer = true;
     script.onload = () => {
-      // Wait a bit for the library to initialize
       const checkReady = setInterval(() => {
         if (window.google?.accounts?.id) {
           clearInterval(checkReady);
+          setScriptLoaded(true);
           renderButton();
         }
       }, 100);
+    };
+    script.onerror = () => {
+      setScriptError(true);
     };
     document.head.appendChild(script);
 
@@ -85,7 +108,7 @@ export default function GoogleSignIn({ onSuccess, text = "Continue with Google" 
   return (
     <div style={{ width: "100%" }}>
       <div ref={buttonRef} style={{ width: "100%", minHeight: "44px" }} />
-      {!ready && (
+      {!ready && !scriptError && (
         <div
           style={{
             width: "100%", fontWeight: 500, fontSize: "14px",
@@ -102,6 +125,19 @@ export default function GoogleSignIn({ onSuccess, text = "Continue with Google" 
             <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
           </svg>
           Loading Google...
+        </div>
+      )}
+      {scriptError && (
+        <div
+          style={{
+            width: "100%", fontWeight: 500, fontSize: "13px",
+            backgroundColor: "transparent", color: "#EF4444",
+            padding: "12px 24px", borderRadius: "8px",
+            border: "1px solid #EF444430",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: "10px",
+          }}
+        >
+          Failed to load Google Sign-In. Check your connection.
         </div>
       )}
     </div>

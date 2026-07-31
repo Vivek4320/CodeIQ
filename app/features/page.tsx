@@ -10,13 +10,13 @@ const FEATURES = [
     icon: Sparkles,
     title: "AI Code Completion",
     desc: "Real-time AI-powered suggestions powered by Google Gemini. Completions adapt to your function names, variable names, and coding intent.",
-    details: ["Powered by Google Gemini AI", "Context-aware suggestions", "Works across all 10 languages", "Instant inline completions"],
+    details: ["Powered by Google Gemini AI", "Context-aware suggestions", "Works across all 12 languages", "Instant inline completions"],
   },
   {
     icon: Zap,
     title: "Instant Execution",
-    desc: "Run code in 10 languages the moment you hit Run. JavaScript and TypeScript execute live — others run through our smart simulator.",
-    details: ["Sub-second output", "10 languages supported", "No setup required", "Real-time results"],
+    desc: "Run code in 12 languages the moment you hit Run. JavaScript and TypeScript execute live — others run through our smart simulator.",
+    details: ["Sub-second output", "12 languages supported", "No setup required", "Real-time results"],
   },
   {
     icon: GitBranch,
@@ -32,9 +32,9 @@ const FEATURES = [
   },
   {
     icon: Terminal,
-    title: "10 Languages",
-    desc: "Write in JavaScript, TypeScript, Python, C, C++, Java, Go, Rust, Ruby, or Haskell — all from one editor.",
-    details: ["JavaScript & TypeScript", "Python, C & C++", "Java, Go & Rust", "Ruby & Haskell"],
+    title: "12 Languages",
+    desc: "Write in JavaScript, TypeScript, Python, C, C++, Java, Go, Rust, Ruby, Haskell, HTML, or CSS — all from one editor.",
+    details: ["JavaScript & TypeScript", "Python, C & C++", "Java, Go & Rust", "Ruby, Haskell, HTML & CSS"],
   },
   {
     icon: Shield,

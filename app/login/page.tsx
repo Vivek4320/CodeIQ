@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Eye, EyeOff } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
 import { Instrument_Serif, Inter } from "next/font/google";
-import Footer from "@/components/Footer";
 import Logo from "@/components/landing/Logo";
 import { useTheme } from "@/components/landing/ThemeContext";
 import { useAuth } from "@/components/AuthContext";
 import GoogleSignIn from "@/components/GoogleSignIn";
+import { useIsMobile } from "@/hooks/useMediaQuery";
 
 const display = Instrument_Serif({
   subsets: ["latin"],
@@ -30,11 +30,14 @@ interface Errors {
 export default function LoginPage() {
   const { theme } = useTheme();
   const { login, loginWithGoogle } = useAuth();
+  const isMobile = useIsMobile();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
+  const [serverError, setServerError] = useState("");
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [isLoading, setIsLoading] = useState(false);
 
   const validate = (): Errors => {
     const e: Errors = {};
@@ -59,9 +62,15 @@ export default function LoginPage() {
     const validationErrors = validate();
     setErrors(validationErrors);
     setTouched({ email: true, password: true });
+    setServerError("");
 
     if (Object.keys(validationErrors).length === 0) {
-      await login(email.trim().toLowerCase(), password);
+      setIsLoading(true);
+      const result = await login(email.trim().toLowerCase(), password);
+      if (!result.ok && result.error) {
+        setServerError(result.error);
+      }
+      setIsLoading(false);
     }
   };
 
@@ -101,13 +110,13 @@ export default function LoginPage() {
       className={`${display.variable} ${bodyFont.variable}`}
       style={{ minHeight: "100vh", display: "flex", flexDirection: "column", backgroundColor: theme.bg, color: theme.text }}
     >
-      <div style={{ padding: "28px 24px", maxWidth: "1040px", width: "100%", margin: "0 auto" }}>
+      <div style={{ padding: isMobile ? "20px 16px" : "28px 24px", maxWidth: "1040px", width: "100%", margin: "0 auto" }}>
         <Link href="/" style={{ textDecoration: "none" }}>
           <Logo iconSize={36} textSize={24} />
         </Link>
       </div>
 
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 24px 80px" }}>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: isMobile ? "24px 16px 60px" : "40px 24px 80px" }}>
         <div style={{ width: "100%", maxWidth: "380px" }}>
           <div style={{ textAlign: "center", marginBottom: "36px" }}>
             <h1 className="font-display" style={{ fontSize: "32px", fontWeight: 400, marginBottom: "8px" }}>
@@ -118,16 +127,28 @@ export default function LoginPage() {
             </p>
           </div>
 
+          {/* Server error banner */}
+          {serverError && (
+            <div style={{
+              padding: "10px 14px", marginBottom: "16px", borderRadius: "8px",
+              backgroundColor: "#EF444410", border: "1px solid #EF444430",
+              fontSize: "13px", color: "#EF4444", fontFamily: "var(--font-body), sans-serif",
+            }}>
+              {serverError}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             {/* Email */}
             <div>
               <label className="font-mono" style={labelStyle}>Email</label>
               <input
                 type="email" value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => { setEmail(e.target.value); setServerError(""); }}
                 onBlur={() => handleBlur("email")}
                 placeholder="you@example.com" className="font-body"
                 style={inputStyle("email")}
+                disabled={isLoading}
               />
               {touched.email && errors.email && <span className="font-body" style={errorStyle}>{errors.email}</span>}
             </div>
@@ -139,10 +160,11 @@ export default function LoginPage() {
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => { setPassword(e.target.value); setServerError(""); }}
                   onBlur={() => handleBlur("password")}
                   placeholder="••••••••" className="font-body"
                   style={{ ...inputStyle("password"), paddingRight: "40px" }}
+                  disabled={isLoading}
                 />
                 <button
                   type="button"
@@ -162,11 +184,22 @@ export default function LoginPage() {
               {touched.password && errors.password && <span className="font-body" style={errorStyle}>{errors.password}</span>}
             </div>
 
-            <button type="submit" className="font-body" style={{ marginTop: "8px", fontWeight: 500, fontSize: "14px", backgroundColor: theme.accent, color: theme.bg, padding: "12px 24px", borderRadius: "8px", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", transition: "background 0.2s ease" }}
-              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme.accentHover; }}
-              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = theme.accent; }}
+            <button type="submit" disabled={isLoading} className="font-body" style={{
+              marginTop: "8px", fontWeight: 500, fontSize: "14px",
+              backgroundColor: isLoading ? theme.faint : theme.accent,
+              color: theme.bg, padding: "12px 24px", borderRadius: "8px",
+              border: "none", cursor: isLoading ? "not-allowed" : "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+              transition: "background 0.2s ease",
+            }}
+              onMouseEnter={(e) => { if (!isLoading) e.currentTarget.style.backgroundColor = theme.accentHover; }}
+              onMouseLeave={(e) => { if (!isLoading) e.currentTarget.style.backgroundColor = theme.accent; }}
             >
-              Sign in <ArrowRight size={16} />
+              {isLoading ? (
+                <><Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> Signing in...</>
+              ) : (
+                <>Sign in <ArrowRight size={16} /></>
+              )}
             </button>
           </form>
 
@@ -185,7 +218,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-      <Footer />
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
