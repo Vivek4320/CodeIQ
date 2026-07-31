@@ -100,23 +100,6 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000)
 
-### Environment Variables
-
-```env
-# Database
-DATABASE_URL=your_database_url
-
-# Authentication
-GOOGLE_CLIENT_ID=your_client_id
-GOOGLE_CLIENT_SECRET=your_client_secret
-
-# AI Agent
-KK_VAULT=your_vault
-KK_VAULT_PASS=your_password
-```
-
----
-
 ## Supported Languages
 
 | Language | Local Compiler | Interactive Input | Piston Fallback |
