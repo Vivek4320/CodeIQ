@@ -1,184 +1,225 @@
-# CodeIQ
+<div align="center">
 
-> Code Smarter. Run Faster.
+# `CodeIQ`
 
-CodeIQ is a browser-based code editor that lets you write, run, and share code in 12 languages — no setup required.
+### **Code Smarter. Run Faster.**
 
-## 🚀 Features
+A modern, browser-based code editor with AI assistance, live execution, and 12+ language support — all from your browser.
 
-- **AI Code Completion** — Context-aware suggestions that adapt to your coding style
-- **Instant Execution** — Run Python, JavaScript, TypeScript, C++, Java, Go, Rust, and Ruby instantly
-- **Auto-saved History** — Every run is versioned automatically
-- **Shareable Programs** — Send a link that runs live for anyone
-- **7 Game Themes** — Midnight, Cyberpunk, Retro Gaming, Neon Nights, Deep Ocean, Hacker, Light Mode
-- **User Authentication** — Email/password signup and login with profile icon
+---
 
-## 🛠️ Tech Stack
+![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript)
+![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react)
+![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3FCF8E?style=flat-square&logo=supabase)
+![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 
-| Technology | Purpose |
-|-----------|---------|
-| [Next.js 16](https://nextjs.org) | React framework (App Router) |
-| [React 19](https://react.dev) | UI library |
-| [TypeScript](https://www.typescriptlang.org) | Type safety |
-| [Tailwind CSS 4](https://tailwindcss.com) | Styling |
-| [MySQL (Railway)](https://railway.app) | Database |
-| [KeyKing](https://github.com/Malaybhai11/keyking) | Zero-trust AI routing (no API keys) |
-| [Lucide React](https://lucide.dev) | Icons |
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/your-username/CodeIQ)
 
-## 📁 Project Structure
+</div>
+
+---
+
+## What is CodeIQ?
+
+CodeIQ is a full-featured online code editor that lets you write, execute, and share code across 12+ programming languages — directly from your browser. No installations. No configurations. Just code.
 
 ```
-CodeIQ/
-├── app/
-│   ├── api/
-│   │   ├── auth/
-│   │   │   ├── login/route.ts      # Login API
-│   │   │   ├── signup/route.ts     # Signup API
-│   │   │   └── me/route.ts         # Get current user
-│   │   └── setup/route.ts          # DB setup endpoint
-│   ├── features/page.tsx           # Features page
-│   ├── docs/page.tsx               # Documentation page
-│   ├── login/page.tsx              # Login page
-│   ├── signup/page.tsx             # Signup page
-│   ├── layout.tsx                  # Root layout
-│   ├── page.tsx                    # Landing page
-│   └── globals.css                 # Global styles
-├── components/
-│   ├── landing/
-│   │   ├── Hero.tsx                # Hero section
-│   │   ├── Features.tsx            # Feature grid
-│   │   ├── StickyStory.tsx         # How it works section
-│   │   ├── HorizontalCards.tsx     # Scrollable cards
-│   │   ├── CTASection.tsx          # Call to action
-│   │   ├── MarqueeTicker.tsx       # Language ticker
-│   │   ├── Logo.tsx                # SVG logo component
-│   │   ├── ThemeContext.tsx         # Theme provider
-│   │   ├── ThemeStyle.tsx          # CSS variable injector
-│   │   └── theme.ts               # 7 theme definitions
-│   ├── Navbar.tsx                  # Shared navbar
-│   ├── Footer.tsx                  # Shared footer
-│   ├── PageLayout.tsx              # Page wrapper
-│   └── AuthContext.tsx             # Auth provider
-├── lib/
-│   └── db.ts                       # MySQL connection
-├── .env.local                      # Environment variables
-└── package.json
+���─────────────────────────────────────────────────────┐
+│  // Write code                                      │
+│  console.log("Hello, World!");                      │
+│                                                     │
+│  // Run instantly                                   │
+│  ▶ Output: Hello, World!                            │
+│                                                     │
+│  // Share with anyone                               │
+│  🔗 https://codeiq.app/share/abc123                 │
+└─────────────────────────────────────────────────────┘
 ```
 
-## �� Themes
+---
 
-| Theme | Accent Color |
-|-------|-------------|
-| 🌙 Midnight | White |
-| ���� Cyberpunk | Neon Pink |
-| 👾 Retro Gaming | Yellow |
-| 💜 Neon Nights | Purple |
-| 🌊 Deep Ocean | Cyan |
-| 💚 Hacker | Green |
-| ☀️ Light Mode | Black |
+## Features
 
-## 🚀 Getting Started
+| Feature | Description |
+|---------|-------------|
+| **Multi-Language Support** | 12 languages: JavaScript, TypeScript, Python, C, C++, Java, Go, Rust, Ruby, Haskell, HTML, CSS |
+| **AI Code Agent** | Context-aware code generation, debugging, and explanation powered by LLMs |
+| **Instant Execution** | Run code in real-time with live output — no waiting |
+| **Smart Input Detection** | Auto-detects `input()` calls and shows inline input fields |
+| **Live Preview** | HTML/CSS editor with instant browser preview |
+| **7 Themes** | Midnight, Cyberpunk, Retro Gaming, Neon Nights, Deep Ocean, Hacker, Light Mode |
+| **Auto-Save** | Projects saved automatically to database |
+| **Shareable Links** | Generate shareable URLs for any code snippet |
+| **Admin Panel** | Full dashboard with user management, language config, and analytics |
+| **Responsive Design** | Works on desktop, tablet, and mobile devices |
+
+---
+
+## Tech Stack
+
+```
+├── Frontend          → Next.js 16, React 19, TypeScript, Tailwind CSS 4
+├── Code Editor       → CodeMirror 6 with custom autocomplete
+├── Terminal          → xterm.js + node-pty (WebSocket PTY)
+├── AI Agent          → KeyKing SDK (Groq, Anthropic, OpenAI routing)
+├── Database          → Supabase (PostgreSQL)
+├── Auth              → Email/Password + Google OAuth
+├── Icons             → Lucide React
+└── Deployment        → Vercel / Railway / Docker
+```
+
+---
+
+## Getting Started
 
 ### Prerequisites
 
-- Node.js 18+
-- npm or pnpm
-- Railway account (for MySQL database)
+```bash
+node -v    # 18+
+npm -v     # 9+
+```
 
 ### Installation
 
 ```bash
-# Clone the repository
+# Clone the repo
 git clone https://github.com/your-username/CodeIQ.git
-
-# Navigate to project
 cd CodeIQ
 
 # Install dependencies
 npm install
-```
 
-### Environment Variables
+# Set up environment
+cp .env.example .env.local
+# Edit .env.local with your credentials
 
-Create `.env.local` file:
-
-```env
-DATABASE_URL=mysql://username:password@host:port/database_name
-
-# KeyKing AI — export vault from KeyKing Desktop App (Settings > Export Vault)
-KK_VAULT=KK_VAULT_eyJhbGciOiJIUzI1NiIs...
-KK_VAULT_PASS=your-vault-password
-```
-
-### Database Setup
-
-The app auto-creates the `users` table on first API call. Or manually:
-
-```sql
-CREATE TABLE users (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(255) NOT NULL,
-  email VARCHAR(255) UNIQUE NOT NULL,
-  password VARCHAR(255) NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-### Run Development Server
-
-```bash
+# Start development
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000)
 
-## 📱 Pages
+### Environment Variables
 
-| Route | Description | Auth Required |
-|-------|-------------|---------------|
-| `/` | Landing page | No |
-| `/features` | Features overview | Yes |
-| `/docs` | Documentation | Yes |
-| `/login` | User login | No |
-| `/signup` | User signup | No |
+```env
+# Database (Supabase PostgreSQL)
+DATABASE_URL=postgresql://postgres:password@db.xxx.supabase.co:5432/postgres
 
-## 🔐 Authentication
+# Google OAuth (optional)
+GOOGLE_CLIENT_ID=your_client_id
+GOOGLE_CLIENT_SECRET=your_client_secret
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_client_id
 
-- **Email/Password** — Traditional signup and login
-- **Validation** — Real-time form validation with error messages
-- **Profile Icon** — Shows user initial, click for dropdown with logout
-- **Protected Routes** — Features and Docs pages require login
+# AI Agent (KeyKing)
+KK_VAULT=your_vault
+KK_VAULT_PASS=your_password
 
-## 📦 API Endpoints
+# Admin
+ADMIN_EMAIL=your@email.com
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/signup` | Create new user |
-| POST | `/api/auth/login` | Login user |
-| POST | `/api/auth/me` | Get user by email |
-| GET | `/api/setup` | Setup/verify database |
-
-## 🚀 Deployment
-
-### Vercel
-
-```bash
-npm run build
+# Code Execution (optional)
+PISTON_API_URL=https://emkc.org/api/v2
 ```
-
-Deploy to [Vercel](https://vercel.com) with environment variables.
-
-### Railway
-
-1. Connect GitHub repository
-2. Add MySQL database
-3. Set `DATABASE_URL` environment variable
-4. Deploy
-
-## 📄 License
-
-MIT License
 
 ---
 
-Built with ❤️ by Vivek Pankhaniya
+## Supported Languages
+
+| Language | Local Compiler | Interactive Input | Piston Fallback |
+|----------|:--------------:|:-----------------:|:---------------:|
+| JavaScript | Node.js | — | ✅ |
+| TypeScript | tsx | — | ✅ |
+| Python | python | ✅ | ✅ |
+| C | gcc | — | ✅ |
+| C++ | g++ | — | ✅ |
+| Java | javac | — | ✅ |
+| Go | go | ✅ | ✅ |
+| Rust | rustc | — | ✅ |
+| Ruby | ruby | ✅ | ✅ |
+| Haskell | stack | — | ✅ |
+| HTML | — | — | — |
+| CSS | — | — | — |
+
+---
+
+## Admin Panel
+
+Access the admin dashboard at `/admin/login`
+
+```
+Admin Credentials:
+Email:    admin@codeiq.com
+Password: admin@codeiq
+```
+
+**Dashboard Features:**
+- 📊 Real-time analytics (users, runs, error rates)
+- 🔧 Language management (add/edit/remove languages live)
+- 👥 User management (view, promote, ban)
+- 💬 Feedback review system
+
+---
+
+## API Reference
+
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| `POST` | `/api/auth/signup` | Create account | No |
+| `POST` | `/api/auth/login` | Sign in | No |
+| `POST` | `/api/auth/google` | Google OAuth | No |
+| `GET` | `/api/languages` | List active languages | No |
+| `POST` | `/api/execute` | Execute code | No |
+| `POST` | `/api/preview` | Generate HTML preview | No |
+| `POST` | `/api/projects` | Save project | Yes |
+| `GET` | `/api/projects` | List user projects | Yes |
+| `POST` | `/api/agent` | AI code assistant | Yes |
+
+---
+
+## Deployment
+
+### Vercel (Recommended)
+
+```bash
+# Push to GitHub
+git push origin main
+
+# Import on vercel.com → Deploy
+# Set environment variables in Vercel dashboard
+```
+
+### Docker
+
+```bash
+docker build -t codeiq .
+docker run -p 3000:3000 codeiq
+```
+
+---
+
+## Security
+
+- ✅ Rate limiting on code execution (30 req/min per IP)
+- ✅ Code size limit (50KB max)
+- ✅ Google JWT verified server-side
+- ✅ Admin panel with separate authentication
+- ✅ Java requires login on every execution
+- ✅ SQL injection prevention (parameterized queries)
+- ✅ XSS protection via React's built-in sanitization
+
+---
+
+## License
+
+MIT © [Vivek Pankhaniya](https://github.com/vivekpankhaniya)
+
+---
+
+<div align="center">
+
+**Built with ❤️ using Next.js, React, and Supabase**
+
+*Write code. Run it instantly. Share it with the world.*
+
+</div>
