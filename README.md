@@ -1,6 +1,6 @@
 <div align="center">
 
-<h1>⟨/⟩ <b>CodeIQ</b></h1>
+<h1> <b>CodeIQ</b></h1>
 
 ### **Code Smarter. Run Faster.**
 
