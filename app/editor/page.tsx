@@ -14,9 +14,14 @@ import Logo from "@/components/landing/Logo";
 import CodeEditor from "@/components/editor/CodeEditor";
 import EditorToolbar from "@/components/editor/EditorToolbar";
 import OutputPanel from "@/components/editor/OutputPanel";
-import AgentPanel from "@/components/editor/AgentPanel";
+import dynamic from "next/dynamic";
 import Terminal from "@/components/editor/Terminal";
 import { useIsMobile } from "@/hooks/useMediaQuery";
+
+const AgentPanel = dynamic(() => import("@/components/editor/AgentPanel"), {
+  loading: () => <div style={{ padding: "20px", fontSize: "13px", textAlign: "center", opacity: 0.5 }}>Loading AI Agent...</div>,
+  ssr: false,
+});
 
 const display = Instrument_Serif({ subsets: ["latin"], weight: ["400"], style: ["normal", "italic"], variable: "--font-display" });
 const bodyFont = Inter({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-body" });
@@ -91,6 +96,7 @@ export default function EditorPage() {
   const [htmlCode, setHtmlCode] = useState(DEFAULT_CODE.html);
   const [cssCode, setCssCode] = useState(DEFAULT_CODE.css);
   const isWebLanguage = language === "html" || language === "css";
+  const [webTab, setWebTab] = useState<"html" | "css">("html");
 
   // Auto-save state
   const [currentProjectId, setCurrentProjectId] = useState<number | null>(
@@ -516,41 +522,42 @@ export default function EditorPage() {
       <div
         style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
-          height: "38px", padding: "0 12px",
+          height: isMobile ? "48px" : "38px", padding: isMobile ? "0 10px" : "0 12px",
           borderBottom: `1px solid ${theme.border}`,
           backgroundColor: theme.panel, flexShrink: 0,
           fontSize: "12px", color: theme.muted,
-          flexWrap: "wrap",
+          gap: "8px",
         }}
       >
         {/* Left: Logo + Project */}
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "6px" : "10px", minWidth: 0, flex: 1 }}>
           <Link href="/dashboard" style={{ display: "flex", alignItems: "center", color: theme.muted, textDecoration: "none", flexShrink: 0 }}
             onMouseEnter={(e) => { e.currentTarget.style.color = theme.text; }}
             onMouseLeave={(e) => { e.currentTarget.style.color = theme.muted; }}>
             <Logo iconSize={18} textSize={0} />
           </Link>
-          <span style={{ color: theme.faint }}>›</span>
           <input type="text" value={projectName} onChange={(e) => setProjectName(e.target.value)} className="font-mono"
-            style={{ fontSize: "12px", fontWeight: 500, color: theme.text, backgroundColor: "transparent", border: "none", outline: "none", padding: "2px 4px", width: "150px", borderRadius: "3px" }}
+            style={{ fontSize: "12px", fontWeight: 500, color: theme.text, backgroundColor: "transparent", border: "none", outline: "none", padding: "2px 4px", width: isMobile ? "90px" : "150px", minWidth: 0, borderRadius: "3px" }}
             onFocus={(e) => { e.currentTarget.style.backgroundColor = `${theme.text}08`; }}
             onBlur={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }} />
-          <span className="font-mono" style={{ fontSize: "10px", color: theme.faint }}>
-            {isWebLanguage ? "" : `· ${FILE_NAMES[language] || "main.txt"}`}
-          </span>
+          {!isMobile && (
+            <span className="font-mono" style={{ fontSize: "10px", color: theme.faint, flexShrink: 0 }}>
+              {isWebLanguage ? "" : `· ${FILE_NAMES[language] || "main.txt"}`}
+            </span>
+          )}
           {saveStatus && saveStatus !== "idle" && (
-            <span className="font-mono" style={{ fontSize: "10px", color: saveStatus === "saving" ? "#FBBF24" : "#34D399" }}>
+            <span className="font-mono" style={{ fontSize: "10px", color: saveStatus === "saving" ? "#FBBF24" : "#34D399", flexShrink: 0 }}>
               {saveStatus === "saving" ? "●" : "○"}
             </span>
           )}
         </div>
 
         {/* Right: Actions */}
-        <div style={{ display: "flex", alignItems: "center", gap: "2px", flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "2px" : "2px", flexShrink: 0 }}>
           {/* Theme */}
           <div ref={themeMenuRef} style={{ position: "relative" }}>
             <button onClick={() => setShowThemeMenu(!showThemeMenu)} title="Theme"
-              style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "28px", height: "28px", backgroundColor: showThemeMenu ? `${theme.accent}15` : "transparent", color: showThemeMenu ? theme.accent : theme.muted, border: "none", borderRadius: "4px", cursor: "pointer", transition: "all 0.1s ease" }}
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", width: isMobile ? "34px" : "28px", height: isMobile ? "34px" : "28px", backgroundColor: showThemeMenu ? `${theme.accent}15` : "transparent", color: showThemeMenu ? theme.accent : theme.muted, border: "none", borderRadius: "6px", cursor: "pointer", transition: "all 0.1s ease" }}
               onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = `${theme.text}10`; e.currentTarget.style.color = theme.text; }}
               onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = showThemeMenu ? `${theme.accent}15` : "transparent"; e.currentTarget.style.color = showThemeMenu ? theme.accent : theme.muted; }}>
               <Palette size={14} />
@@ -576,70 +583,91 @@ export default function EditorPage() {
           </div>
           {/* History */}
           <button onClick={() => { setShowHistory(!showHistory); setShowAgent(false); }} title="History"
-            style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "28px", height: "28px", backgroundColor: showHistory ? `${theme.accent}15` : "transparent", color: showHistory ? theme.accent : theme.muted, border: "none", borderRadius: "4px", cursor: "pointer", transition: "all 0.1s ease" }}
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", width: isMobile ? "34px" : "28px", height: isMobile ? "34px" : "28px", backgroundColor: showHistory ? `${theme.accent}15` : "transparent", color: showHistory ? theme.accent : theme.muted, border: "none", borderRadius: "6px", cursor: "pointer", transition: "all 0.1s ease" }}
             onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = `${theme.text}10`; e.currentTarget.style.color = theme.text; }}
             onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = showHistory ? `${theme.accent}15` : "transparent"; e.currentTarget.style.color = showHistory ? theme.accent : theme.muted; }}>
             <History size={14} />
           </button>
           {/* Share */}
           <button onClick={handleShare} title="Share"
-            style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "28px", height: "28px", backgroundColor: "transparent", color: theme.muted, border: "none", borderRadius: "4px", cursor: "pointer", transition: "all 0.1s ease" }}
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", width: isMobile ? "34px" : "28px", height: isMobile ? "34px" : "28px", backgroundColor: "transparent", color: theme.muted, border: "none", borderRadius: "6px", cursor: "pointer", transition: "all 0.1s ease" }}
             onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = `${theme.text}10`; e.currentTarget.style.color = theme.text; }}
             onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = theme.muted; }}>
             <Share2 size={14} />
           </button>
-          <div style={{ width: "1px", height: "16px", backgroundColor: theme.border, margin: "0 4px" }} />
+          <div style={{ width: "1px", height: isMobile ? "20px" : "16px", backgroundColor: theme.border, margin: isMobile ? "0 2px" : "0 4px" }} />
           {/* CodeIQ AI */}
           <button onClick={() => { setShowAgent(!showAgent); setShowHistory(false); }}
             title="CodeIQ AI"
-            style={{ display: "flex", alignItems: "center", gap: "5px", height: "28px", padding: "0 10px", fontSize: "11px", fontWeight: 500,
+            style={{ display: "flex", alignItems: "center", gap: "5px", height: isMobile ? "34px" : "28px", padding: isMobile ? "0 8px" : "0 10px", fontSize: "11px", fontWeight: 500,
               backgroundColor: showAgent ? `${theme.accent}15` : "transparent", color: showAgent ? theme.accent : theme.muted,
-              border: "none", borderRadius: "4px", cursor: "pointer", transition: "all 0.1s ease" }}
+              border: "none", borderRadius: "6px", cursor: "pointer", transition: "all 0.1s ease" }}
             onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = `${theme.text}10`; e.currentTarget.style.color = theme.text; }}
             onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = showAgent ? `${theme.accent}15` : "transparent"; e.currentTarget.style.color = showAgent ? theme.accent : theme.muted; }}>
             <Bot size={13} />
-            <span className="font-mono">CodeIQ</span>
+            {!isMobile && <span className="font-mono">CodeIQ</span>}
           </button>
-          <span className="font-body" style={{ fontSize: "11px", color: theme.faint, padding: "0 8px", maxWidth: "80px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.name}</span>
         </div>
       </div>
 
       {/* Main content */}
-      <div ref={containerRef} style={{ flex: 1, display: "flex", padding: "16px 24px 24px", gap: "0", minHeight: 0, overflow: "hidden" }}>
+      <div ref={containerRef} style={{ flex: 1, display: "flex", flexDirection: isMobile ? "column" : "row", padding: isMobile ? "8px" : "16px 24px 24px", gap: isMobile ? "8px" : "0", minHeight: 0, overflow: "hidden" }}>
 
         {isWebLanguage ? (
-          /* HTML/CSS: Full width side-by-side editors, no output */
-          <div style={{ width: "100%", display: "flex", flexDirection: "column", border: `1px solid ${theme.border}`, borderRadius: "8px", overflow: "hidden", minHeight: "400px" }}>
+          /* HTML/CSS: Side-by-side on desktop, tabbed on mobile */
+          <div style={{ width: "100%", display: "flex", flexDirection: "column", border: `1px solid ${theme.border}`, borderRadius: "8px", overflow: "hidden", minHeight: isMobile ? "auto" : "400px", flex: isMobile ? "none" : 1 }}>
             <EditorToolbar language={language} onLanguageChange={handleLanguageChange} onRun={handleRun} isRunning={isRunning} saveStatus={saveStatus} />
-            <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
-              {/* HTML Editor */}
-              <div style={{ flex: 1, display: "flex", flexDirection: "column", borderRight: `1px solid ${theme.border}`, minWidth: 0 }}>
-                <div className="font-mono" style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: language === "html" ? theme.accent : theme.faint, padding: "6px 12px", borderBottom: `1px solid ${theme.border}`, backgroundColor: theme.panel, display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" }}
-                  onClick={() => { setLanguage("html"); setCode(htmlCode); }}>
-                  <span style={{ width: "5px", height: "5px", borderRadius: "50%", backgroundColor: language === "html" ? theme.accent : theme.faint }} />
-                  index.html
+            {isMobile ? (
+              /* Mobile: tabbed layout */
+              <>
+                <div style={{ display: "flex", borderBottom: `1px solid ${theme.border}`, backgroundColor: theme.panel }}>
+                  {(["html", "css"] as const).map((tab) => (
+                    <button key={tab} onClick={() => { setWebTab(tab); setLanguage(tab); setCode(tab === "html" ? htmlCode : cssCode); }}
+                      className="font-mono" style={{
+                        flex: 1, padding: "8px", fontSize: "11px", fontWeight: 600, textTransform: "uppercase",
+                        letterSpacing: "0.08em", cursor: "pointer", border: "none",
+                        backgroundColor: "transparent", transition: "all 0.15s ease",
+                        color: webTab === tab ? theme.accent : theme.faint,
+                        borderBottom: `2px solid ${webTab === tab ? theme.accent : "transparent"}`,
+                      }}>
+                      {tab === "html" ? "index.html" : "style.css"}
+                    </button>
+                  ))}
                 </div>
-                <div style={{ flex: 1, minHeight: 0 }}>
-                  <CodeEditor language="html" value={htmlCode} onChange={setHtmlCode} />
+                <div style={{ flex: 1, minHeight: "300px" }}>
+                  <CodeEditor language={webTab} value={webTab === "html" ? htmlCode : cssCode} onChange={webTab === "html" ? setHtmlCode : setCssCode} />
+                </div>
+              </>
+            ) : (
+              /* Desktop: side-by-side editors */
+              <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", borderRight: `1px solid ${theme.border}`, minWidth: 0 }}>
+                  <div className="font-mono" style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: language === "html" ? theme.accent : theme.faint, padding: "6px 12px", borderBottom: `1px solid ${theme.border}`, backgroundColor: theme.panel, display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" }}
+                    onClick={() => { setLanguage("html"); setCode(htmlCode); }}>
+                    <span style={{ width: "5px", height: "5px", borderRadius: "50%", backgroundColor: language === "html" ? theme.accent : theme.faint }} />
+                    index.html
+                  </div>
+                  <div style={{ flex: 1, minHeight: 0 }}>
+                    <CodeEditor language="html" value={htmlCode} onChange={setHtmlCode} />
+                  </div>
+                </div>
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+                  <div className="font-mono" style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: language === "css" ? theme.accent : theme.faint, padding: "6px 12px", borderBottom: `1px solid ${theme.border}`, backgroundColor: theme.panel, display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" }}
+                    onClick={() => { setLanguage("css"); setCode(cssCode); }}>
+                    <span style={{ width: "5px", height: "5px", borderRadius: "50%", backgroundColor: language === "css" ? theme.accent : theme.faint }} />
+                    style.css
+                  </div>
+                  <div style={{ flex: 1, minHeight: 0 }}>
+                    <CodeEditor language="css" value={cssCode} onChange={setCssCode} />
+                  </div>
                 </div>
               </div>
-              {/* CSS Editor */}
-              <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
-                <div className="font-mono" style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: language === "css" ? theme.accent : theme.faint, padding: "6px 12px", borderBottom: `1px solid ${theme.border}`, backgroundColor: theme.panel, display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" }}
-                  onClick={() => { setLanguage("css"); setCode(cssCode); }}>
-                  <span style={{ width: "5px", height: "5px", borderRadius: "50%", backgroundColor: language === "css" ? theme.accent : theme.faint }} />
-                  style.css
-                </div>
-                <div style={{ flex: 1, minHeight: 0 }}>
-                  <CodeEditor language="css" value={cssCode} onChange={setCssCode} />
-                </div>
-              </div>
-            </div>
+            )}
           </div>
         ) : (
           /* Other languages: Editor + Output split */
           <>
-            <div style={{ width: isMobile ? "100%" : `${splitPos}%`, display: "flex", flexDirection: "column", border: `1px solid ${theme.border}`, borderRadius: isMobile ? "8px 8px 0 0" : "8px 0 0 8px", overflow: "hidden", height: isMobile ? "50%" : "100%" }}>
+            <div style={{ width: isMobile ? "100%" : `${splitPos}%`, flex: isMobile ? 1 : "none", display: "flex", flexDirection: "column", border: `1px solid ${theme.border}`, borderRadius: "8px", overflow: "hidden", height: isMobile ? "auto" : "100%" }}>
               <EditorToolbar language={language} onLanguageChange={handleLanguageChange} onRun={handleRun} isRunning={isRunning} saveStatus={saveStatus} />
               <div style={{ flex: 1, minHeight: 0 }}>
                 <CodeEditor language={language} value={code} onChange={handleCodeChange} />
@@ -653,7 +681,7 @@ export default function EditorPage() {
             </div>}
 
             {showHistory ? (
-              <div style={{ width: `${100 - splitPos}%`, border: `1px solid ${theme.border}`, borderRadius: "0 8px 8px 0", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+              <div style={{ width: isMobile ? "100%" : `${100 - splitPos}%`, flex: isMobile ? 1 : "none", border: `1px solid ${theme.border}`, borderRadius: "8px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
                 <div style={{ padding: "10px 16px", borderBottom: `1px solid ${theme.border}`, backgroundColor: theme.panel, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <Clock size={14} style={{ color: theme.faint }} />
@@ -690,7 +718,7 @@ export default function EditorPage() {
             ) : (
               <>
                 {/* Output Panel or Terminal */}
-                <div style={{ width: isMobile ? "100%" : `${100 - splitPos}%`, border: `1px solid ${theme.border}`, borderRadius: isMobile ? "0 0 8px 8px" : "0 8px 8px 0", overflow: "hidden", height: isMobile ? "50%" : "100%", display: showAgent ? "none" : "block" }}>
+                <div style={{ width: isMobile ? "100%" : `${100 - splitPos}%`, flex: isMobile ? 1 : "none", border: `1px solid ${theme.border}`, borderRadius: "8px", overflow: "hidden", height: isMobile ? "auto" : "100%", display: showAgent ? "none" : "block" }}>
                   {showTerminal ? (
                     <Terminal
                       key={terminalKey}
@@ -734,35 +762,88 @@ export default function EditorPage() {
                   )}
                 </div>
 
-                {/* AI Agent — always mounted, hidden when closed */}
-                <div style={{ width: isMobile ? "100%" : `${100 - splitPos}%`, border: `1px solid ${theme.border}`, borderRadius: isMobile ? "0 0 8px 8px" : "0 8px 8px 0", overflow: "hidden", height: isMobile ? "50%" : "100%", display: showAgent ? "block" : "none" }}>
-                  <AgentPanel key={agentKey} language={language} existingCode={code}
-                    onApplyAndRun={(lang, newCode) => {
-                      appliedCodeRef.current = newCode;
-                      setCode(newCode);
-                      if (lang === "html") setHtmlCode(newCode);
-                      else if (lang === "css") setCssCode(newCode);
-                      // Trigger run with new code
-                      lastRunCodeRef.current = newCode;
-                      setOutput([]);
-                      setIsRunning(true);
-                      fetch("/api/execute", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json", ...(user?.email ? { "x-user-email": user.email } : {}) },
-                        body: JSON.stringify({ language: lang, code: newCode }),
-                      })
-                        .then((r) => r.json())
-                        .then((data) => {
-                          if (data.error) setOutput([data.error]);
-                          else if (data.output) setOutput(data.output.filter((l: string) => l.trim() !== "" && l !== "(no output)"));
-                          else setOutput(["(no output)"]);
+                {/* AI Agent — Desktop: side panel, Mobile: bottom sheet */}
+                {!isMobile ? (
+                  <div style={{ width: `${100 - splitPos}%`, border: `1px solid ${theme.border}`, borderRadius: "0 8px 8px 0", overflow: "hidden", height: "100%", display: showAgent ? "block" : "none" }}>
+                    <AgentPanel key={agentKey} language={language} existingCode={code}
+                      onApplyAndRun={(lang, newCode) => {
+                        appliedCodeRef.current = newCode;
+                        setCode(newCode);
+                        if (lang === "html") setHtmlCode(newCode);
+                        else if (lang === "css") setCssCode(newCode);
+                        lastRunCodeRef.current = newCode;
+                        setOutput([]);
+                        setIsRunning(true);
+                        fetch("/api/execute", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json", ...(user?.email ? { "x-user-email": user.email } : {}) },
+                          body: JSON.stringify({ language: lang, code: newCode }),
                         })
-                        .catch((e) => setOutput(["Error: " + e.message]))
-                        .finally(() => setIsRunning(false));
-                    }}
-                    onClose={() => setShowAgent(false)}
-                  onNewChat={() => setAgentKey((k) => k + 1)} />
-                </div>
+                          .then((r) => r.json())
+                          .then((data) => {
+                            if (data.error) setOutput([data.error]);
+                            else if (data.output) setOutput(data.output.filter((l: string) => l.trim() !== "" && l !== "(no output)"));
+                            else setOutput(["(no output)"]);
+                          })
+                          .catch((e) => setOutput(["Error: " + e.message]))
+                          .finally(() => setIsRunning(false));
+                      }}
+                      onClose={() => setShowAgent(false)}
+                    onNewChat={() => setAgentKey((k) => k + 1)} />
+                  </div>
+                ) : showAgent && (
+                  /* Mobile: bottom sheet */
+                  <>
+                    <div onClick={() => setShowAgent(false)} style={{
+                      position: "fixed", inset: 0, zIndex: 199,
+                      backgroundColor: "rgba(0,0,0,0.45)",
+                      animation: "agentFadeIn 0.2s ease",
+                    }} />
+                    <div style={{
+                      position: "fixed", bottom: 0, left: 0, right: 0,
+                      height: "75vh", zIndex: 200,
+                      backgroundColor: theme.bg,
+                      borderTopLeftRadius: "20px", borderTopRightRadius: "20px",
+                      border: `1px solid ${theme.border}`, borderBottom: "none",
+                      display: "flex", flexDirection: "column",
+                      boxShadow: "0 -8px 40px rgba(0,0,0,0.4)",
+                      animation: "agentSheetUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+                    }}>
+                      {/* Drag handle */}
+                      <div style={{ display: "flex", justifyContent: "center", padding: "10px 0 4px", cursor: "pointer" }}
+                        onClick={() => setShowAgent(false)}>
+                        <div style={{ width: "36px", height: "4px", borderRadius: "2px", backgroundColor: theme.faint, opacity: 0.5 }} />
+                      </div>
+                      <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
+                        <AgentPanel key={agentKey} language={language} existingCode={code}
+                          onApplyAndRun={(lang, newCode) => {
+                            appliedCodeRef.current = newCode;
+                            setCode(newCode);
+                            if (lang === "html") setHtmlCode(newCode);
+                            else if (lang === "css") setCssCode(newCode);
+                            lastRunCodeRef.current = newCode;
+                            setOutput([]);
+                            setIsRunning(true);
+                            fetch("/api/execute", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json", ...(user?.email ? { "x-user-email": user.email } : {}) },
+                              body: JSON.stringify({ language: lang, code: newCode }),
+                            })
+                              .then((r) => r.json())
+                              .then((data) => {
+                                if (data.error) setOutput([data.error]);
+                                else if (data.output) setOutput(data.output.filter((l: string) => l.trim() !== "" && l !== "(no output)"));
+                                else setOutput(["(no output)"]);
+                              })
+                              .catch((e) => setOutput(["Error: " + e.message]))
+                              .finally(() => setIsRunning(false));
+                          }}
+                          onClose={() => setShowAgent(false)}
+                        onNewChat={() => setAgentKey((k) => k + 1)} />
+                      </div>
+                    </div>
+                  </>
+                )}
               </>
             )}
           </>
@@ -772,21 +853,23 @@ export default function EditorPage() {
       <style>{`
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        @keyframes agentFadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes agentSheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
       `}</style>
 
       {/* Share modal */}
       {showShare && (
         <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}
           onClick={() => setShowShare(false)}>
-          <div style={{ backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "12px", padding: "28px", width: "100%", maxWidth: "420px" }}
+          <div style={{ backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "12px", padding: isMobile ? "20px" : "28px", width: "100%", maxWidth: "420px", margin: isMobile ? "16px" : "0" }}
             onClick={(e) => e.stopPropagation()}>
             <h3 className="font-display" style={{ fontSize: "20px", fontWeight: 400, marginBottom: "12px" }}>Share your code</h3>
             <p className="font-body" style={{ fontSize: "13px", color: theme.muted, marginBottom: "16px" }}>
               Anyone with this link can view your code.
             </p>
-            <div style={{ display: "flex", gap: "8px" }}>
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
               <input readOnly value={`${window.location.origin}${shareUrl}`} className="font-mono"
-                style={{ flex: 1, padding: "10px 12px", fontSize: "13px", backgroundColor: theme.bg, color: theme.text, border: `1px solid ${theme.border}`, borderRadius: "6px", outline: "none" }} />
+                style={{ flex: 1, minWidth: 0, padding: "10px 12px", fontSize: "13px", backgroundColor: theme.bg, color: theme.text, border: `1px solid ${theme.border}`, borderRadius: "6px", outline: "none" }} />
               <button onClick={copyShareUrl}
                 style={{ padding: "10px 16px", fontSize: "13px", fontWeight: 500, backgroundColor: theme.accent, color: theme.bg, border: "none", borderRadius: "6px", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", whiteSpace: "nowrap" }}>
                 {copied ? <><Check size={14} /> Copied!</> : <><Copy size={14} /> Copy</>}

@@ -5,7 +5,7 @@ import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLi
 import { EditorState } from "@codemirror/state";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { bracketMatching, foldGutter, HighlightStyle, syntaxHighlighting } from "@codemirror/language";
-import { autocompletion, closeBrackets, type CompletionContext, type CompletionResult } from "@codemirror/autocomplete";
+import { autocompletion, closeBrackets, startCompletion, type CompletionContext, type CompletionResult } from "@codemirror/autocomplete";
 import { tags } from "@lezer/highlight";
 import { javascript } from "@codemirror/lang-javascript";
 import { python } from "@codemirror/lang-python";
@@ -735,6 +735,7 @@ const languageCompletions: Record<string, { label: string; type: string; detail?
 let aiDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 let lastAiRequest = "";
 let lastAiResult: { label: string; type: string; detail: string; isAI: boolean }[] = [];
+let activeView: EditorView | null = null;
 
 async function fetchAICompletions(language: string, code: string, cursorPosition: number) {
   try {
@@ -745,7 +746,12 @@ async function fetchAICompletions(language: string, code: string, cursorPosition
     });
     if (!res.ok) return [];
     const data = await res.json();
-    return data.completions || [];
+    const results = data.completions || [];
+    // Re-trigger autocomplete to show the new AI results
+    if (results.length > 0 && activeView) {
+      setTimeout(() => startCompletion(activeView!), 50);
+    }
+    return results;
   } catch {
     return [];
   }
@@ -836,15 +842,16 @@ export default function CodeEditor({ language, value, onChange }: CodeEditorProp
           // Trigger debounced AI fetch (fire-and-forget)
           const cursorPos = context.pos;
           const fullCode = context.state.doc.toString();
-          const requestKey = `${language}:${cursorPos}:${fullCode.length}`;
+          const requestKey = `${language}:${cursorPos}:${fullCode}`;
 
           if (requestKey !== lastAiRequest) {
             lastAiRequest = requestKey;
+            lastAiResult = []; // Clear stale results immediately
             if (aiDebounceTimer) clearTimeout(aiDebounceTimer);
             aiDebounceTimer = setTimeout(async () => {
               const results = await fetchAICompletions(language, fullCode, cursorPos);
               lastAiResult = results;
-            }, 500);
+            }, 400);
           }
 
           return {
@@ -946,6 +953,7 @@ export default function CodeEditor({ language, value, onChange }: CodeEditorProp
       state,
       parent: editorRef.current,
     });
+    activeView = viewRef.current;
 
     requestAnimationFrame(() => {
       viewRef.current?.focus();
@@ -954,6 +962,7 @@ export default function CodeEditor({ language, value, onChange }: CodeEditorProp
     return () => {
       if (viewRef.current) {
         viewRef.current.destroy();
+        activeView = null;
       }
     };
   }, [language, theme]);

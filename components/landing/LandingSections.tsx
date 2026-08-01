@@ -11,20 +11,20 @@ import AnimateIn from "@/components/landing/AnimateIn";
 export default function LandingSections() {
   return (
     <main style={{ flex: 1 }}>
-      <AnimateIn slideUp={0} duration={0.8}>
+      <AnimateIn type="fadeIn" duration={0.8}>
         <Hero />
       </AnimateIn>
       <MarqueeTicker />
-      <AnimateIn delay={0.1}>
+      <AnimateIn type="slideLeft" delay={0.05}>
         <StickyStory />
       </AnimateIn>
-      <AnimateIn>
+      <AnimateIn type="scaleUp">
         <AIAgentShowcase />
       </AnimateIn>
-      <AnimateIn>
+      <AnimateIn type="blur">
         <HorizontalCards />
       </AnimateIn>
-      <AnimateIn>
+      <AnimateIn type="fadeUp" delay={0.1}>
         <FAQ />
       </AnimateIn>
     </main>

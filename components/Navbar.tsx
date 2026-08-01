@@ -9,7 +9,7 @@ import { themeIcons } from "@/components/landing/ThemeIcons";
 import Logo from "@/components/landing/Logo";
 import { useAuth } from "@/components/AuthContext";
 import { useIsMobile } from "@/hooks/useMediaQuery";
-import { Menu, X } from "lucide-react";
+import { Home, Code2, LayoutDashboard, BookOpen, Sparkles, Palette, User, LogIn, Download } from "lucide-react";
 
 export default function Navbar() {
   const { theme, themeKey, setTheme } = useTheme();
@@ -17,12 +17,15 @@ export default function Navbar() {
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [themeSheetOpen, setThemeSheetOpen] = useState(false);
+  const [mobileDeferredPrompt, setMobileDeferredPrompt] = useState<any>(null);
+  const [mobileIsInstalled, setMobileIsInstalled] = useState(false);
   const themesLinkRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
 
+  // Close desktop dropdowns on outside click
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node) &&
@@ -37,57 +40,214 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open, profileOpen]);
 
+  // PWA install prompt listener
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.matchMedia("(display-mode: standalone)").matches || (window.navigator as any).standalone) {
+      setMobileIsInstalled(true);
+      return;
+    }
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setMobileDeferredPrompt(e);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  const handleMobileInstall = async () => {
+    if (mobileDeferredPrompt) {
+      mobileDeferredPrompt.prompt();
+      const { outcome } = await mobileDeferredPrompt.userChoice;
+      if (outcome === "accepted") setMobileIsInstalled(true);
+      setMobileDeferredPrompt(null);
+    } else {
+      // iOS — show instructions
+      alert("To install CodeIQ:\n\n1. Tap the Share button ↗\n2. Tap 'Add to Home Screen'\n3. Tap Add");
+    }
+  };
+
   const navLinks = [
-    ...(user ? [{ label: "Editor", href: "/editor" }] : []),
-    ...(user ? [{ label: "Dashboard", href: "/dashboard" }] : []),
-    { label: "Features", href: user ? "/features" : "/signup" },
-    { label: "Docs", href: user ? "/docs" : "/signup" },
+    ...(user ? [{ label: "Editor", href: "/editor", icon: Code2 }] : []),
+    ...(user ? [{ label: "Dashboard", href: "/dashboard", icon: LayoutDashboard }] : []),
+    { label: "Features", href: user ? "/features" : "/signup", icon: Sparkles },
+    { label: "Docs", href: user ? "/docs" : "/signup", icon: BookOpen },
   ];
 
-  // Mobile: hamburger menu
+  // ─── Mobile: Bottom Navigation Bar ────────────────────────────────
   if (isMobile) {
-    return (
-      <nav style={{ width: "100%", boxSizing: "border-box", padding: "16px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <Link href="/" style={{ textDecoration: "none" }}>
-            <Logo iconSize={28} textSize={20} />
-          </Link>
-          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} style={{ background: "none", border: "none", color: theme.text, cursor: "pointer", padding: "8px" }}>
-            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
-        </div>
+    // Bottom nav items
+    const bottomNavItems = user
+      ? [
+          { label: "Home", href: "/", icon: Home },
+          { label: "Editor", href: "/editor", icon: Code2 },
+          { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+          { label: "Themes", icon: Palette, onClick: () => setThemeSheetOpen(true) },
+          { label: "Profile", icon: User, onClick: () => setProfileOpen(!profileOpen) },
+        ]
+      : [
+          { label: "Home", href: "/", icon: Home },
+          { label: "Features", href: "/signup", icon: Sparkles },
+          { label: "Docs", href: "/signup", icon: BookOpen },
+          { label: "Themes", icon: Palette, onClick: () => setThemeSheetOpen(true) },
+          { label: "Login", href: "/login", icon: LogIn },
+        ];
 
-        {mobileMenuOpen && (
-          <div style={{ marginTop: "16px", padding: "16px", border: `1px solid ${theme.border}`, borderRadius: "12px", backgroundColor: theme.panel }}>
-            {navLinks.map((item) => (
-              <Link key={item.label} href={item.href} onClick={() => setMobileMenuOpen(false)}
-                style={{ display: "block", padding: "12px 0", fontSize: "15px", fontWeight: 500, color: pathname === item.href ? theme.accent : theme.text, textDecoration: "none", borderBottom: `1px solid ${theme.border}` }}>
-                {item.label}
-              </Link>
-            ))}
-            <div style={{ display: "flex", gap: "8px", marginTop: "16px" }}>
-              {user ? (
-                <button onClick={() => { logout(); setMobileMenuOpen(false); }} style={{ flex: 1, padding: "10px", fontSize: "14px", fontWeight: 500, backgroundColor: "transparent", color: theme.muted, border: `1px solid ${theme.border}`, borderRadius: "8px", cursor: "pointer" }}>
-                  Logout
+    return (
+      <>
+        {/* Top navbar — logo only */}
+        <nav style={{ width: "100%", boxSizing: "border-box", padding: "12px 16px", backgroundColor: theme.panel, borderBottom: `1px solid ${theme.border}` }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center" }}>
+              <Logo iconSize={30} textSize={22} />
+            </Link>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              {!mobileIsInstalled && (
+                <button onClick={handleMobileInstall}
+                  style={{ padding: "6px 12px", fontSize: "11px", fontWeight: 600, backgroundColor: "transparent", color: theme.muted, border: `1px solid ${theme.border}`, borderRadius: "20px", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", transition: "all 0.2s ease" }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.accent; e.currentTarget.style.color = theme.text; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.color = theme.muted; }}>
+                  <Download size={12} /> Install
                 </button>
-              ) : (
-                <>
-                  <Link href="/login" onClick={() => setMobileMenuOpen(false)} style={{ flex: 1, padding: "10px", fontSize: "14px", fontWeight: 500, color: theme.text, border: `1px solid ${theme.border}`, borderRadius: "8px", textAlign: "center", textDecoration: "none" }}>
-                    Login
-                  </Link>
-                  <Link href="/signup" onClick={() => setMobileMenuOpen(false)} style={{ flex: 1, padding: "10px", fontSize: "14px", fontWeight: 500, backgroundColor: theme.text, color: theme.bg, borderRadius: "8px", textAlign: "center", textDecoration: "none" }}>
-                    Sign Up
-                  </Link>
-                </>
+              )}
+              {user && (
+                <button onClick={() => window.location.href = "/editor"}
+                  style={{ padding: "6px 14px", fontSize: "12px", fontWeight: 600, backgroundColor: theme.accent, color: theme.bg, border: "none", borderRadius: "20px", cursor: "pointer", display: "flex", alignItems: "center", gap: "5px" }}>
+                  <Code2 size={13} /> Run
+                </button>
               )}
             </div>
           </div>
+        </nav>
+
+        {/* Profile dropdown sheet */}
+        {profileOpen && user && (
+          <>
+            <div onClick={() => setProfileOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 998, backgroundColor: "rgba(0,0,0,0.4)" }} />
+            <div style={{
+              position: "fixed", bottom: "calc(68px + env(safe-area-inset-bottom, 0px))", left: "16px", right: "16px", zIndex: 1001,
+              backgroundColor: theme.panel, border: `1px solid ${theme.border}`,
+              borderRadius: "16px", padding: "16px",
+              boxShadow: "0 -8px 32px rgba(0,0,0,0.3)",
+              animation: "sheetSlideUp 0.25s ease",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "14px", paddingBottom: "14px", borderBottom: `1px solid ${theme.border}` }}>
+                <div style={{ width: "40px", height: "40px", borderRadius: "50%", backgroundColor: `${theme.accent}20`, border: `1px solid ${theme.border}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span className="font-body" style={{ fontSize: "16px", fontWeight: 600, color: theme.accent, textTransform: "uppercase" }}>{user.name.charAt(0)}</span>
+                </div>
+                <div>
+                  <div className="font-body" style={{ fontSize: "14px", fontWeight: 600, color: theme.text }}>{user.name}</div>
+                  <div className="font-mono" style={{ fontSize: "11px", color: theme.faint }}>{user.email}</div>
+                </div>
+              </div>
+              <button onClick={() => { logout(); setProfileOpen(false); }}
+                style={{ width: "100%", padding: "10px", fontSize: "13px", fontWeight: 500, backgroundColor: "#EF444415", color: "#EF4444", border: `1px solid #EF444430`, borderRadius: "10px", cursor: "pointer", textAlign: "center" }}>
+                Logout
+              </button>
+            </div>
+          </>
         )}
-      </nav>
+
+        {/* Theme bottom sheet */}
+        {themeSheetOpen && (
+          <>
+            <div onClick={() => setThemeSheetOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 998, backgroundColor: "rgba(0,0,0,0.4)" }} />
+            <div style={{
+              position: "fixed", bottom: "calc(68px + env(safe-area-inset-bottom, 0px))", left: "16px", right: "16px", zIndex: 1001,
+              backgroundColor: theme.panel, border: `1px solid ${theme.border}`,
+              borderRadius: "16px", padding: "12px",
+              boxShadow: "0 -8px 32px rgba(0,0,0,0.3)",
+              animation: "sheetSlideUp 0.25s ease",
+              maxHeight: "50vh", overflowY: "auto",
+            }}>
+              <div className="font-mono" style={{ fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: theme.faint, padding: "6px 8px 8px" }}>
+                Choose Theme
+              </div>
+              {(Object.keys(themes) as ThemeKey[]).map((key) => {
+                const t = themes[key]; const isActive = key === themeKey;
+                const Icon = themeIcons[key];
+                return (
+                  <button key={key} onClick={() => { setTheme(key); setThemeSheetOpen(false); }}
+                    style={{
+                      display: "flex", alignItems: "center", gap: "12px", width: "100%",
+                      padding: "12px 10px", border: "none", borderRadius: "10px",
+                      backgroundColor: isActive ? `${theme.accent}15` : "transparent",
+                      color: isActive ? theme.accent : theme.text, cursor: "pointer",
+                      fontSize: "14px", fontWeight: 500, textAlign: "left",
+                    }}>
+                    <Icon size={16} style={{ flexShrink: 0 }} />
+                    <span>{t.label}</span>
+                    {isActive && <span style={{ marginLeft: "auto", width: "6px", height: "6px", borderRadius: "50%", backgroundColor: theme.accent }} />}
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        {/* Bottom navigation bar */}
+        <nav style={{
+          position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 997,
+          backgroundColor: theme.panel,
+          borderTop: `1px solid ${theme.border}`,
+          paddingBottom: "env(safe-area-inset-bottom, 0px)",
+          boxShadow: "0 -2px 16px rgba(0,0,0,0.15)",
+        }} role="navigation" aria-label="Main navigation">
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-around",
+            height: "60px",
+          }}>
+            {bottomNavItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = item.href ? pathname === item.href : false;
+              return (
+                <Link
+                  key={item.label}
+                  href={item.href || "#"}
+                  onClick={(e) => {
+                    if (item.onClick) { e.preventDefault(); item.onClick(); }
+                  }}
+                  aria-label={item.label}
+                  aria-current={isActive ? "page" : undefined}
+                  style={{
+                    display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                    gap: "2px", textDecoration: "none", flex: 1, height: "100%",
+                    color: isActive ? theme.accent : theme.muted,
+                    transition: "color 0.2s ease",
+                    WebkitTapHighlightColor: "transparent",
+                    position: "relative",
+                  }}>
+                  {/* Active indicator dot */}
+                  {isActive && (
+                    <span style={{
+                      position: "absolute", top: "4px",
+                      width: "4px", height: "4px", borderRadius: "50%",
+                      backgroundColor: theme.accent,
+                    }} />
+                  )}
+                  <Icon size={22} strokeWidth={isActive ? 2.2 : 1.6} style={{ marginTop: isActive ? "4px" : "0", transition: "all 0.2s ease" }} />
+                  <span className="font-mono" style={{
+                    fontSize: "10px",
+                    fontWeight: isActive ? 600 : 400,
+                    letterSpacing: "0.01em",
+                    transition: "all 0.2s ease",
+                  }}>
+                    {item.label}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
+
+        <style>{`
+          @keyframes sheetSlideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        `}</style>
+      </>
     );
   }
 
-  // Desktop: original layout
+  // ─── Desktop: original layout ──────────────────────────────────────
   return (
     <nav style={{ width: "100%", boxSizing: "border-box", padding: "36px 24px 28px" }}>
       <div style={{ maxWidth: "1040px", margin: "0 auto", display: "grid", gridTemplateColumns: "auto 1fr", alignItems: "center" }}>

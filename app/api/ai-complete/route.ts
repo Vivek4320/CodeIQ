@@ -52,9 +52,6 @@ Return JSON array:`;
     // KeyKing handles provider routing with automatic fallback
     const keyking = getCompletionClient();
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
-
     try {
       const data = await keyking.chat.completions.create({
         model: "llama-3.3-70b-versatile",
@@ -63,14 +60,11 @@ Return JSON array:`;
         max_tokens: 256,
       });
 
-      clearTimeout(timeout);
-
       const text = data.choices?.[0]?.message?.content?.trim();
       if (!text) return NextResponse.json({ completions: [] }, { status: 200 });
 
       return NextResponse.json({ completions: parseCompletions(text) });
     } catch {
-      clearTimeout(timeout);
       return NextResponse.json({ completions: [] }, { status: 200 });
     }
   } catch {

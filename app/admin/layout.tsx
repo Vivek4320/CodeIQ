@@ -65,8 +65,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Logo iconSize={18} textSize={0} />
           <span style={{ fontSize: "12px", fontWeight: 600 }}>Admin</span>
         </div>
-        <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ background: "none", border: "none", color: theme.text, cursor: "pointer", padding: "4px" }}>
-          {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+        <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ background: "none", border: "none", color: theme.text, cursor: "pointer", padding: "8px", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "44px", minWidth: "44px" }}>
+          {sidebarOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
       </div>
 
@@ -80,7 +80,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         width: "220px", borderRight: `1px solid ${theme.border}`,
         display: "flex", flexDirection: "column", flexShrink: 0,
         position: "fixed", top: 0, bottom: 0, left: 0, zIndex: 50,
-        backgroundColor: theme.bg, transform: sidebarOpen ? "translateX(0)" : undefined,
+        backgroundColor: theme.bg,
+        transition: "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+        transform: sidebarOpen ? "translateX(0)" : undefined,
       }} className="admin-sidebar">
         <div style={{ padding: "16px", borderBottom: `1px solid ${theme.border}` }}>
           <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "8px", color: theme.muted, fontSize: "12px" }}>
@@ -96,11 +98,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             const active = pathname === href || (href !== "/admin" && pathname.startsWith(href));
             return (
               <Link key={href} href={href} onClick={() => setSidebarOpen(false)} style={{
-                display: "flex", alignItems: "center", gap: "10px", padding: "10px 12px",
-                borderRadius: "6px", fontSize: "13px", fontWeight: 500, textDecoration: "none",
+                display: "flex", alignItems: "center", gap: "10px", padding: "12px 14px",
+                borderRadius: "8px", fontSize: "13px", fontWeight: 500, textDecoration: "none",
                 color: active ? theme.accent : theme.muted,
                 backgroundColor: active ? `${theme.accent}12` : "transparent",
                 marginBottom: "2px", transition: "all 0.15s ease",
+                minHeight: "44px",
               }}>
                 <Icon size={16} /> {label}
               </Link>

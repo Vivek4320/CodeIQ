@@ -42,7 +42,7 @@ export default function Features() {
         <p className="font-body" style={{ fontSize: "15px", color: theme.muted, marginBottom: "48px", maxWidth: "440px", lineHeight: 1.65 }}>
           One editor, multiple languages, and an assistant that&apos;s actually paying attention.
         </p>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(250px, 100%), 1fr))", gap: "16px" }}>
           {FEATURES.map(({ icon: Icon, title, desc }) => (
             <div
               key={title}

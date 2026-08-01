@@ -4,19 +4,20 @@ import { Sparkles, Zap, GitBranch, Share2, Terminal, Shield, Globe, Cpu, ArrowLe
 import Link from "next/link";
 import PageLayout from "@/components/PageLayout";
 import { useTheme } from "@/components/landing/ThemeContext";
+import AnimateIn from "@/components/landing/AnimateIn";
 
 const FEATURES = [
   {
     icon: Sparkles,
     title: "AI Code Completion",
-    desc: "Real-time AI-powered suggestions powered by Google Gemini. Completions adapt to your function names, variable names, and coding intent.",
-    details: ["Powered by Google Gemini AI", "Context-aware suggestions", "Works across all 12 languages", "Instant inline completions"],
+    desc: "Real-time AI-powered suggestions via KeyKing SDK with automatic provider routing (Groq, OpenAI). Completions adapt to your code context.",
+    details: ["Powered by KeyKing AI routing", "Context-aware suggestions", "Works across all 12 languages", "Instant inline completions"],
   },
   {
     icon: Zap,
     title: "Instant Execution",
-    desc: "Run code in 12 languages the moment you hit Run. JavaScript and TypeScript execute live — others run through our smart simulator.",
-    details: ["Sub-second output", "12 languages supported", "No setup required", "Real-time results"],
+    desc: "Run code in 12 languages the moment you hit Run. JavaScript and TypeScript execute live in a VM sandbox — others run via Piston API or local compilers.",
+    details: ["Sub-second output for JS/TS", "12 languages supported", "No setup required", "Real-time results"],
   },
   {
     icon: GitBranch,
@@ -27,8 +28,8 @@ const FEATURES = [
   {
     icon: Share2,
     title: "Shareable Programs",
-    desc: "Send a link that runs live for anyone who opens it — output included, not just source code.",
-    details: ["Live output sharing", "No account needed", "Permanent links", "Embed anywhere"],
+    desc: "Generate a shareable link for any code snippet. Anyone with the link can view and run your code — output included.",
+    details: ["Live output sharing", "No account needed to view", "Permanent links", "Works on any device"],
   },
   {
     icon: Terminal,
@@ -39,20 +40,20 @@ const FEATURES = [
   {
     icon: Shield,
     title: "Secure Sandboxing",
-    desc: "JavaScript and TypeScript run in an isolated VM sandbox. Your code never touches the host system.",
-    details: ["Isolated execution", "5-second timeout", "No data persistence", "Safe evaluation"],
+    desc: "JavaScript and TypeScript run in an isolated Node.js VM sandbox. Other languages execute via Piston API with no host access.",
+    details: ["Isolated VM execution", "Configurable timeout", "No data persistence", "Safe evaluation"],
   },
   {
     icon: Globe,
-    title: "7 Game Themes",
+    title: "7 Unique Themes",
     desc: "Switch between Midnight, Cyberpunk, Retro Gaming, Neon Nights, Deep Ocean, Hacker, and Light Mode — all with one click.",
-    details: ["7 unique themes", "Instant switching", "Theme selector in editor", "Persists across sessions"],
+    details: ["7 handcrafted themes", "Instant switching", "Theme selector in editor", "Persists across sessions"],
   },
   {
     icon: Cpu,
     title: "Lightweight & Fast",
-    desc: "Built with Next.js and CodeMirror. The editor loads fast and stays responsive no matter the project size.",
-    details: ["Fast load time", "60fps scrolling", "Minimal memory usage", "Optimized rendering"],
+    desc: "Built with Next.js 16, React 19, and CodeMirror 6. The editor loads fast and stays responsive no matter the project size.",
+    details: ["Next.js 16 + React 19", "CodeMirror 6 editor", "Minimal memory usage", "Optimized rendering"],
   },
 ];
 
@@ -103,19 +104,19 @@ export default function FeaturesPage() {
       {/* Feature Grid */}
       <section style={{ maxWidth: "1040px", margin: "0 auto", padding: "40px 24px 100px" }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "20px" }}>
-          {FEATURES.map(({ icon: Icon, title, desc, details }) => (
-            <div
-              key={title}
-              style={{
-                border: `1px solid ${theme.border}`,
-                borderRadius: "12px",
-                backgroundColor: theme.panel,
-                padding: "28px",
-                transition: "border-color 0.2s ease",
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.accent; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; }}
-            >
+          {FEATURES.map(({ icon: Icon, title, desc, details }, index) => (
+            <AnimateIn key={title} type="scaleUp" delay={index * 0.08}>
+              <div
+                style={{
+                  border: `1px solid ${theme.border}`,
+                  borderRadius: "12px",
+                  backgroundColor: theme.panel,
+                  padding: "28px",
+                  transition: "border-color 0.2s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease",
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.accent; e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = `0 8px 30px -8px ${theme.accent}20`; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
+              >
               <div
                 style={{
                   width: "40px",
@@ -155,6 +156,7 @@ export default function FeaturesPage() {
                 ))}
               </ul>
             </div>
+            </AnimateIn>
           ))}
         </div>
       </section>

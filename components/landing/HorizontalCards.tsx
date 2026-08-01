@@ -72,7 +72,7 @@ export default function HorizontalCards() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fit, minmax(min(180px, 100%), 1fr))",
             gap: "12px",
           }}
         >
@@ -103,6 +103,7 @@ export default function HorizontalCards() {
               {/* Icon + Number */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
                 <div
+                  className="card-icon-wrap"
                   style={{
                     width: "36px",
                     height: "36px",
@@ -111,6 +112,7 @@ export default function HorizontalCards() {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
+                    transition: "all 0.3s ease",
                   }}
                 >
                   <Icon size={17} style={{ color: accent }} />

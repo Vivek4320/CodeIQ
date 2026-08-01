@@ -299,7 +299,7 @@ export default function DashboardPage() {
                   {selectedIds.size === filteredProjects.length && filteredProjects.length > 0 ? <Check size={14} /> : <Square size={14} />}
                 </button>
               )}
-              <div style={{ position: "relative", width: "220px" }}>
+              <div style={{ position: "relative", width: "100%", maxWidth: "220px" }}>
                 <Search size={14} style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: theme.faint }} />
                 <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search projects..."
@@ -396,7 +396,7 @@ export default function DashboardPage() {
                           <FileCode size={18} style={{ color: theme.accent }} />
                         )}
                         <div>
-                          <span className="font-body" style={{ fontSize: "14px", fontWeight: 500 }}>{project.name}</span>
+                          <span className="font-body" style={{ fontSize: "14px", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "200px" }}>{project.name}</span>
                           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "2px" }}>
                             <span className="font-mono" style={{ fontSize: "11px", color: theme.faint }}>{project.language}</span>
                             {isWeb && <span className="font-mono" style={{ fontSize: "10px", color: theme.faint }}>({files.length} files)</span>}

@@ -8,6 +8,7 @@ import Logo from "@/components/landing/Logo";
 import { useTheme } from "@/components/landing/ThemeContext";
 import { useAuth } from "@/components/AuthContext";
 import GoogleSignIn from "@/components/GoogleSignIn";
+import { useIsMobile } from "@/hooks/useMediaQuery";
 
 const display = Instrument_Serif({
   subsets: ["latin"],
@@ -30,6 +31,7 @@ interface Errors {
 export default function SignupPage() {
   const { theme } = useTheme();
   const { signup, loginWithGoogle } = useAuth();
+  const isMobile = useIsMobile();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -116,13 +118,13 @@ export default function SignupPage() {
       className={`${display.variable} ${bodyFont.variable}`}
       style={{ minHeight: "100vh", display: "flex", flexDirection: "column", backgroundColor: theme.bg, color: theme.text }}
     >
-      <div style={{ padding: "28px 24px", maxWidth: "1040px", width: "100%", margin: "0 auto" }}>
+      <div style={{ padding: isMobile ? "20px 16px" : "28px 24px", maxWidth: "1040px", width: "100%", margin: "0 auto" }}>
         <Link href="/" style={{ textDecoration: "none" }}>
           <Logo iconSize={36} textSize={24} />
         </Link>
       </div>
 
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 24px 80px" }}>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: isMobile ? "24px 16px 60px" : "40px 24px 80px" }}>
         <div style={{ width: "100%", maxWidth: "380px" }}>
           <div style={{ textAlign: "center", marginBottom: "36px" }}>
             <h1 className="font-display" style={{ fontSize: "32px", fontWeight: 400, marginBottom: "8px" }}>

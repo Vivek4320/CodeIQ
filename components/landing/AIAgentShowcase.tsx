@@ -3,6 +3,7 @@
 import { Bot, Bug, Lightbulb, Zap, Code2, Check } from "lucide-react";
 import { useTheme } from "./ThemeContext";
 import { useState, useEffect, useCallback } from "react";
+import { useIsMobile } from "@/hooks/useMediaQuery";
 
 const DEMO_SCENARIOS = [
   {
@@ -66,6 +67,7 @@ const CAPABILITIES = [
 
 export default function AIAgentShowcase() {
   const { theme } = useTheme();
+  const isMobile = useIsMobile();
   const [activeScenario, setActiveScenario] = useState(0);
   const [visibleMessages, setVisibleMessages] = useState(0);
 
@@ -122,11 +124,11 @@ export default function AIAgentShowcase() {
         </div>
 
         {/* Content: Agent demo + Capabilities */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "48px", alignItems: "start" }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? "40px" : "48px", alignItems: "start" }}>
           {/* Left: Live demo mockup */}
           <div>
             {/* Scenario tabs */}
-            <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
+            <div style={{ display: "flex", gap: "8px", marginBottom: "16px", flexWrap: "wrap" }}>
               {DEMO_SCENARIOS.map((scenario, i) => (
                 <button key={i} onClick={() => handleTabClick(i)}
                   className="font-body"

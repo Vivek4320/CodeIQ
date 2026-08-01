@@ -13,6 +13,7 @@ export default function CustomCursor() {
 
     let mouseX = 0, mouseY = 0;
     let ringX = 0, ringY = 0;
+    let currentMode = ""; // "", "hovering", "editor-mode", "text-mode"
     const trailDots: HTMLDivElement[] = [];
     const trailPos: { x: number; y: number }[] = [];
     const TRAIL_COUNT = 6;
@@ -26,11 +27,41 @@ export default function CustomCursor() {
       trailPos.push({ x: 0, y: 0 });
     }
 
+    const setMode = (mode: string) => {
+      if (mode === currentMode) return;
+      // Remove old mode
+      if (currentMode) cursor.classList.remove(currentMode);
+      if (currentMode) ring.classList.remove(currentMode);
+      // Set new mode
+      currentMode = mode;
+      if (mode) cursor.classList.add(mode);
+      if (mode) ring.classList.add(mode);
+    };
+
     const onMouseMove = (e: MouseEvent) => {
       mouseX = e.clientX;
       mouseY = e.clientY;
       cursor.style.left = `${mouseX}px`;
       cursor.style.top = `${mouseY}px`;
+
+      // Determine cursor mode based on what's under the mouse
+      const target = document.elementFromPoint(mouseX, mouseY) as HTMLElement | null;
+      if (!target) return;
+
+      if (target.closest(".cm-editor")) {
+        // Inside code editor — check if over text or gutter
+        if (target.closest(".cm-content")) {
+          setMode("text-mode");
+        } else if (target.closest(".cm-gutters")) {
+          setMode("editor-mode");
+        } else {
+          setMode("editor-mode");
+        }
+      } else if (target.closest("a, button, [role='button'], input, textarea, select, label")) {
+        setMode("hovering");
+      } else {
+        setMode("");
+      }
     };
 
     const animate = () => {
@@ -75,7 +106,6 @@ export default function CustomCursor() {
     const onMouseDown = (e: MouseEvent) => {
       cursor.classList.add("clicking");
       ring.classList.add("clicking");
-      // Skip burst animation in code editor — keep it minimal
       const target = e.target as HTMLElement;
       if (!target.closest(".cm-editor")) {
         createBurst(e.clientX, e.clientY);
@@ -86,43 +116,15 @@ export default function CustomCursor() {
       ring.classList.remove("clicking");
     };
 
-    const onMouseOver = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.closest("a, button, [role='button'], input, textarea, select, label")) {
-        cursor.classList.add("hovering");
-        ring.classList.add("hovering");
-      }
-      if (target.closest(".cm-editor")) {
-        cursor.classList.add("editor-mode");
-        ring.classList.add("editor-mode");
-      }
-    };
-
-    const onMouseOut = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.closest("a, button, [role='button'], input, textarea, select, label")) {
-        cursor.classList.remove("hovering");
-        ring.classList.remove("hovering");
-      }
-      if (target.closest(".cm-editor")) {
-        cursor.classList.remove("editor-mode");
-        ring.classList.remove("editor-mode");
-      }
-    };
-
     document.addEventListener("mousemove", onMouseMove);
     document.addEventListener("mousedown", onMouseDown);
     document.addEventListener("mouseup", onMouseUp);
-    document.addEventListener("mouseover", onMouseOver);
-    document.addEventListener("mouseout", onMouseOut);
 
     return () => {
       cancelAnimationFrame(raf);
       document.removeEventListener("mousemove", onMouseMove);
       document.removeEventListener("mousedown", onMouseDown);
       document.removeEventListener("mouseup", onMouseUp);
-      document.removeEventListener("mouseover", onMouseOver);
-      document.removeEventListener("mouseout", onMouseOut);
       trailDots.forEach((el) => el.remove());
     };
   }, []);

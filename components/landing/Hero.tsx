@@ -217,7 +217,7 @@ export default function Hero() {
         );
       })}
 
-      <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "500px", height: "500px", borderRadius: "50%", background: "radial-gradient(circle, " + theme.accent + "08 0%, transparent 70%)", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: isMobile ? "clamp(250px, 50vw, 400px)" : "500px", height: isMobile ? "clamp(250px, 50vw, 400px)" : "500px", borderRadius: "50%", background: "radial-gradient(circle, " + theme.accent + "08 0%, transparent 70%)", pointerEvents: "none" }} />
 
       <div style={{ maxWidth: "900px", margin: "0 auto", textAlign: "center", position: "relative", zIndex: 1 }}>
         <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "6px 16px", borderRadius: "50px", border: "1px solid " + theme.border, backgroundColor: theme.panel, marginBottom: "28px", fontSize: "12px", color: theme.muted }}>
@@ -291,7 +291,7 @@ export default function Hero() {
           ))}
         </div>
 
-        <div style={{ display: "flex", justifyContent: "center", gap: "12px", marginTop: "40px" }}>
+        <div style={{ display: "flex", justifyContent: "center", gap: "12px", marginTop: "40px", flexWrap: "wrap" }}>
           <Link
             href="/editor"
             className="font-body"
@@ -301,10 +301,11 @@ export default function Hero() {
               padding: "14px 32px", borderRadius: "10px",
               border: "none", display: "inline-flex", alignItems: "center", gap: "8px",
               cursor: "pointer", textDecoration: "none",
-              transition: "opacity 0.2s ease",
+              transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+              boxShadow: `0 0 0 0 ${theme.accent}00`,
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.85"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; }}
+            onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px) scale(1.02)"; e.currentTarget.style.boxShadow = `0 8px 30px -4px ${theme.accent}40`; }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0) scale(1)"; e.currentTarget.style.boxShadow = `0 0 0 0 ${theme.accent}00`; }}
           >
             Start coding free <ArrowRight size={16} />
           </Link>
@@ -318,10 +319,10 @@ export default function Hero() {
               border: `1px solid ${theme.border}`,
               display: "inline-flex", alignItems: "center", gap: "8px",
               cursor: "pointer", textDecoration: "none",
-              transition: "all 0.2s ease",
+              transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.accent; e.currentTarget.style.color = theme.text; }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.color = theme.muted; }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.accent; e.currentTarget.style.color = theme.text; e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = `0 6px 20px -4px ${theme.accent}25`; }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.color = theme.muted; e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
           >
             Create account
           </Link>

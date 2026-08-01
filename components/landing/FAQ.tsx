@@ -33,10 +33,6 @@ const FAQS = [
     q: "Is my code saved?",
     a: "Yes. Every run is auto-saved to your history, and projects are saved to your account. You can access them anytime from the dashboard.",
   },
-  {
-    q: "Can I use CodeIQ on mobile?",
-    a: "CodeIQ is responsive and works on tablets. For the best coding experience, we recommend using it on a desktop or laptop computer.",
-  },
 ];
 
 export default function FAQ() {

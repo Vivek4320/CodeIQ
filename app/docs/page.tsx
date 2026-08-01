@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { BookOpen, Rocket, Code2, Settings, ChevronRight, Sparkles, Moon, Bot, Gamepad2, Waves, Shield, Sun, ArrowLeft } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { BookOpen, Rocket, Code2, Settings, ChevronRight, ChevronDown, Sparkles, Moon, Bot, Gamepad2, Waves, Shield, Sun, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import PageLayout from "@/components/PageLayout";
 import { useTheme } from "@/components/landing/ThemeContext";
 import { themes } from "@/components/landing/theme";
+import { useIsMobile } from "@/hooks/useMediaQuery";
 
 const SECTIONS = [
   {
@@ -55,19 +56,19 @@ console.log(greet("World"));`,
       heading: "Supported Languages",
       paragraphs: [
         "CodeIQ supports 12 popular programming languages out of the box.",
-        "JavaScript and TypeScript execute live in a Node.js VM. All other languages run through our smart simulator that parses output statements.",
+        "JavaScript and TypeScript execute live in a Node.js VM sandbox. Other languages run via the Piston API (remote execution) or local compilers when available.",
       ],
       languages: [
-        { name: "JavaScript", version: "ES2024", status: "Live execution" },
-        { name: "TypeScript", version: "5.3", status: "Live execution" },
-        { name: "Python", version: "3.x", status: "Simulated" },
-        { name: "C", version: "C11", status: "Simulated" },
-        { name: "C++", version: "C++20", status: "Simulated" },
-        { name: "Java", version: "17", status: "Simulated" },
-        { name: "Go", version: "1.21", status: "Simulated" },
-        { name: "Rust", version: "1.74", status: "Simulated" },
-        { name: "Ruby", version: "3.2", status: "Simulated" },
-        { name: "Haskell", version: "9.6", status: "Simulated" },
+        { name: "JavaScript", version: "ES2024", status: "Live (VM)" },
+        { name: "TypeScript", version: "5.x", status: "Live (VM)" },
+        { name: "Python", version: "3.10", status: "Piston API" },
+        { name: "C", version: "GCC 10.2", status: "Piston API" },
+        { name: "C++", version: "GCC 10.2", status: "Piston API" },
+        { name: "Java", version: "15", status: "Piston API" },
+        { name: "Go", version: "1.16", status: "Piston API" },
+        { name: "Rust", version: "1.68", status: "Piston API" },
+        { name: "Ruby", version: "3.0", status: "Piston API" },
+        { name: "Haskell", version: "9.4", status: "Piston API" },
         { name: "HTML", version: "5", status: "Live preview" },
         { name: "CSS", version: "3", status: "Live preview" },
       ],
@@ -80,8 +81,8 @@ console.log(greet("World"));`,
     content: {
       heading: "AI Code Completion",
       paragraphs: [
-        "CodeIQ uses KeyKing for zero-trust AI-powered code completions. As you type, suggestions appear based on your code context — no raw API keys needed.",
-        "AI completions are marked with an \"(AI)\" badge. Static keyword completions are always available as fallback.",
+        "CodeIQ uses KeyKing SDK for zero-trust AI-powered code completions. As you type, suggestions appear based on your code context — no raw API keys needed.",
+        "KeyKing automatically routes through Groq (llama-3.3-70b-versatile) with fallback to OpenAI (gpt-4o-mini). AI completions are marked with an \"(AI)\" badge. Static keyword completions are always available as fallback.",
       ],
       code: `// AI completions are powered by KeyKing
 // No API key setup needed — KeyKing handles routing
@@ -121,10 +122,24 @@ console.log(greet("World"));`,
 
 export default function DocsPage() {
   const { theme, themeKey } = useTheme();
+  const isMobile = useIsMobile();
   const [activeSection, setActiveSection] = useState("getting-started");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const isLightTheme = themeKey === "lightmode";
 
   const section = SECTIONS.find((s) => s.id === activeSection)!;
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    if (dropdownOpen) document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [dropdownOpen]);
 
   return (
     <PageLayout>
@@ -137,59 +152,111 @@ export default function DocsPage() {
         </Link>
       </div>
 
-      <div style={{ maxWidth: "1040px", margin: "0 auto", padding: "60px 24px 100px", display: "flex", gap: "48px" }}>
+      <div style={{ maxWidth: "1040px", margin: "0 auto", padding: isMobile ? "24px 16px 60px" : "60px 24px 100px", display: "flex", flexDirection: isMobile ? "column" : "row", gap: isMobile ? "24px" : "48px" }}>
         {/* Sidebar */}
-        <aside style={{ width: "220px", flexShrink: 0 }}>
-          <div
-            className="font-mono"
-            style={{
-              fontSize: "10px",
-              fontWeight: 600,
-              textTransform: "uppercase",
-              letterSpacing: "0.1em",
-              color: theme.faint,
-              marginBottom: "16px",
-            }}
-          >
-            Documentation
-          </div>
-          <nav style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-            {SECTIONS.map((s) => {
-              const Icon = s.icon;
-              const isActive = s.id === activeSection;
-              return (
-                <button
-                  key={s.id}
-                  onClick={() => setActiveSection(s.id)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "10px",
-                    padding: "10px 12px",
-                    border: "none",
-                    borderRadius: "8px",
-                    backgroundColor: isActive ? `${theme.accent}15` : "transparent",
-                    color: isActive ? theme.accent : theme.muted,
-                    cursor: "pointer",
-                    fontSize: "13px",
-                    fontWeight: 500,
-                    textAlign: "left",
-                    transition: "all 0.15s ease",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isActive) e.currentTarget.style.backgroundColor = `${theme.text}08`;
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActive) e.currentTarget.style.backgroundColor = "transparent";
-                  }}
-                >
-                  <Icon size={16} />
-                  {s.title}
-                  {isActive && <ChevronRight size={14} style={{ marginLeft: "auto" }} />}
-                </button>
-              );
-            })}
-          </nav>
+        <aside style={{ width: isMobile ? "100%" : "220px", flexShrink: 0 }}>
+          {isMobile ? (
+            /* Mobile: custom styled dropdown */
+            <div ref={dropdownRef} style={{ position: "relative" }}>
+              <button
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                style={{
+                  width: "100%", padding: "14px 16px", fontSize: "14px", fontWeight: 500,
+                  backgroundColor: theme.panel, color: theme.text,
+                  border: `1px solid ${theme.border}`, borderRadius: "12px",
+                  cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between",
+                  textAlign: "left", transition: "border-color 0.2s ease",
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.accent; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  {(() => { const Icon = section.icon; return <Icon size={16} style={{ color: theme.accent }} />; })()}
+                  <span>{section.title}</span>
+                </div>
+                <ChevronDown size={16} style={{
+                  color: theme.faint, transition: "transform 0.2s ease",
+                  transform: dropdownOpen ? "rotate(180deg)" : "rotate(0deg)",
+                }} />
+              </button>
+
+              {dropdownOpen && (
+                <div style={{
+                  position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, zIndex: 50,
+                  backgroundColor: theme.panel, border: `1px solid ${theme.border}`,
+                  borderRadius: "12px", padding: "6px",
+                  boxShadow: "0 16px 48px -8px rgba(0,0,0,0.4)",
+                  animation: "dropdownFadeIn 0.2s ease",
+                  maxHeight: "50vh", overflowY: "auto",
+                }}>
+                  {SECTIONS.map((s) => {
+                    const Icon = s.icon;
+                    const isActive = s.id === activeSection;
+                    return (
+                      <button
+                        key={s.id}
+                        onClick={() => { setActiveSection(s.id); setDropdownOpen(false); }}
+                        style={{
+                          display: "flex", alignItems: "center", gap: "10px",
+                          width: "100%", padding: "12px 14px", border: "none", borderRadius: "8px",
+                          backgroundColor: isActive ? `${theme.accent}12` : "transparent",
+                          color: isActive ? theme.accent : theme.text,
+                          cursor: "pointer", fontSize: "14px", fontWeight: 500, textAlign: "left",
+                          transition: "background 0.15s ease",
+                        }}
+                        onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.backgroundColor = `${theme.text}08`; }}
+                        onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.backgroundColor = "transparent"; }}
+                      >
+                        <Icon size={16} style={{ color: isActive ? theme.accent : theme.faint, flexShrink: 0 }} />
+                        <span>{s.title}</span>
+                        {isActive && <span style={{ marginLeft: "auto", width: "6px", height: "6px", borderRadius: "50%", backgroundColor: theme.accent, flexShrink: 0 }} />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              <style>{`@keyframes dropdownFadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+            </div>
+          ) : (
+            /* Desktop: sidebar nav */
+            <>
+              <div
+                className="font-mono"
+                style={{
+                  fontSize: "10px", fontWeight: 600, textTransform: "uppercase",
+                  letterSpacing: "0.1em", color: theme.faint, marginBottom: "16px",
+                }}
+              >
+                Documentation
+              </div>
+              <nav style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                {SECTIONS.map((s) => {
+                  const Icon = s.icon;
+                  const isActive = s.id === activeSection;
+                  return (
+                    <button
+                      key={s.id}
+                      onClick={() => setActiveSection(s.id)}
+                      style={{
+                        display: "flex", alignItems: "center", gap: "10px",
+                        padding: "10px 12px", border: "none", borderRadius: "8px",
+                        backgroundColor: isActive ? `${theme.accent}15` : "transparent",
+                        color: isActive ? theme.accent : theme.muted,
+                        cursor: "pointer", fontSize: "13px", fontWeight: 500,
+                        textAlign: "left", transition: "all 0.15s ease",
+                      }}
+                      onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.backgroundColor = `${theme.text}08`; }}
+                      onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.backgroundColor = "transparent"; }}
+                    >
+                      <Icon size={16} />
+                      {s.title}
+                      {isActive && <ChevronRight size={14} style={{ marginLeft: "auto" }} />}
+                    </button>
+                  );
+                })}
+              </nav>
+            </>
+          )}
         </aside>
 
         {/* Content */}
@@ -261,6 +328,7 @@ export default function DocsPage() {
                 border: `1px solid ${theme.border}`,
                 borderRadius: "10px",
                 overflow: "hidden",
+                overflowX: "auto",
               }}
             >
               <table style={{ width: "100%", borderCollapse: "collapse" }}>

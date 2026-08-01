@@ -5,12 +5,14 @@ import Link from "next/link";
 import { ArrowUpRight, MessageSquare } from "lucide-react";
 import { useTheme } from "@/components/landing/ThemeContext";
 import { useAuth } from "@/components/AuthContext";
+import { useIsMobile } from "@/hooks/useMediaQuery";
 import Logo from "@/components/landing/Logo";
 import FeedbackModal from "@/components/FeedbackModal";
 
 export default function Footer() {
   const { theme } = useTheme();
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [showFeedback, setShowFeedback] = useState(false);
 
   const links = [
@@ -20,7 +22,7 @@ export default function Footer() {
     ...(user ? [{ label: "Dashboard", href: "/dashboard" }] : []),
   ];
 
-  const languages = ["JS", "TS", "PY", "C", "C++", "Java", "Go", "Rust", "RB", "HS"];
+  const languages = ["JS", "TS", "PY", "C", "C++", "Java", "Go", "Rust", "Ruby", "Haskell", "HTML", "CSS"];
 
   return (
     <>
@@ -30,12 +32,12 @@ export default function Footer() {
           style={{
             borderTop: `1px solid ${theme.border}`,
             borderBottom: `1px solid ${theme.border}`,
-            padding: "56px 24px",
+            padding: isMobile ? "32px 16px" : "56px 24px",
             textAlign: "center",
           }}
         >
           <Link href="/" style={{ textDecoration: "none", display: "flex", justifyContent: "center" }}>
-            <Logo iconSize={75} textSize={60} />
+            <Logo iconSize={isMobile ? 50 : 75} textSize={isMobile ? 40 : 60} />
           </Link>
 
           {/* Language pills */}
@@ -44,9 +46,9 @@ export default function Footer() {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: "8px",
+              gap: isMobile ? "6px" : "8px",
               flexWrap: "wrap",
-              marginTop: "28px",
+              marginTop: isMobile ? "20px" : "28px",
             }}
           >
             {languages.map((lang) => (
@@ -76,16 +78,17 @@ export default function Footer() {
           style={{
             maxWidth: "1040px",
             margin: "0 auto",
-            padding: "24px",
+            padding: isMobile ? "16px" : "24px",
             display: "flex",
             alignItems: "center",
-            justifyContent: "space-between",
+            justifyContent: isMobile ? "center" : "space-between",
+            flexDirection: isMobile ? "column" : "row",
             flexWrap: "wrap",
-            gap: "16px",
+            gap: isMobile ? "12px" : "16px",
           }}
         >
           {/* Links */}
-          <div style={{ display: "flex", alignItems: "center", gap: "20px", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "14px" : "20px", flexWrap: "wrap", justifyContent: "center" }}>
             {links.map((link) => (
               <Link
                 key={link.label}

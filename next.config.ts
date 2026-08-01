@@ -1,11 +1,28 @@
 import type { NextConfig } from "next";
-import { join } from "path";
 
-const nextConfig: NextConfig = {
-  turbopack: {
-    root: join(__dirname),
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  allowedDevOrigins: ["10.196.122.208"],
+
+  // PWA headers — service worker must be served with correct headers
+  async headers() {
+    return [
+      {
+        source: "/sw.js",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=0, must-revalidate" },
+          { key: "Service-Worker-Allowed", value: "/" },
+        ],
+      },
+      {
+        source: "/manifest.json",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=604800, immutable" },
+          { key: "Content-Type", value: "application/manifest+json" },
+        ],
+      },
+    ];
   },
-  allowedDevOrigins: ["*.loca.lt", "*.ngrok-free.app", "*.ngrok.io"],
 };
 
-export default nextConfig;
+module.exports = nextConfig;

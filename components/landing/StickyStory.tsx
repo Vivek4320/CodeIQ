@@ -2,6 +2,7 @@
 
 import { Sparkles, Zap, GitBranch, Share2 } from "lucide-react";
 import { useTheme } from "./ThemeContext";
+import { useIsMobile } from "@/hooks/useMediaQuery";
 
 const STORIES = [
   {
@@ -53,11 +54,12 @@ v1  20 min ago   initial draft`,
 
 export default function StickyStory() {
   const { theme } = useTheme();
+  const isMobile = useIsMobile();
 
   return (
     <section style={{ maxWidth: "1040px", margin: "0 auto", padding: "80px 24px" }}>
-      <div style={{ display: "flex", gap: "56px", alignItems: "flex-start", flexWrap: "wrap" }}>
-        <div style={{ flex: "1 1 260px", position: "sticky", top: "40px", minWidth: "240px" }}>
+      <div style={{ display: "flex", gap: isMobile ? "32px" : "56px", alignItems: "flex-start", flexDirection: isMobile ? "column" : "row", flexWrap: "wrap" }}>
+        <div style={{ flex: isMobile ? "none" : "1 1 260px", position: isMobile ? "relative" : "sticky", top: isMobile ? "auto" : "40px", minWidth: isMobile ? "auto" : "240px", width: isMobile ? "100%" : "auto" }}>
           <div
             className="font-mono"
             style={{
@@ -75,7 +77,7 @@ export default function StickyStory() {
           </h2>
         </div>
 
-        <div style={{ flex: "2 1 420px", display: "flex", flexDirection: "column", gap: "88px", minWidth: "300px" }}>
+        <div style={{ flex: "2 1 420px", display: "flex", flexDirection: "column", gap: isMobile ? "40px" : "88px", minWidth: isMobile ? "auto" : "300px", width: isMobile ? "100%" : "auto" }}>
           {STORIES.map(({ icon: Icon, tag, title, desc, code }) => (
             <div key={tag}>
               <div className="font-mono" style={{ fontSize: "12px", color: theme.faint, marginBottom: "12px" }}>
