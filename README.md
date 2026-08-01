@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="public/logo.png" width="80" alt="CodeIQ Logo">
+
 # CodeIQ
 
 ### **Code Smarter. Run Faster.**
