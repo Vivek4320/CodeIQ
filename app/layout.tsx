@@ -39,18 +39,13 @@ export const metadata: Metadata = {
     title: "CodeIQ",
   },
 
-  // Icons
+  // Icons — logo.png as favicon so browser tab shows CodeIQ logo
   icons: {
     icon: [
-      { url: "/icons/icon.svg", type: "image/svg+xml" },
-      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+      { url: "/logo.png", type: "image/png" }
     ],
     apple: [
-      { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
-    ],
-    other: [
-      { rel: "icon", url: "/favicon.ico" },
+      { url: "/logo.png", sizes: "200x200", type: "image/png" },
     ],
   },
 
