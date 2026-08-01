@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 import { useTheme } from "./ThemeContext";
 
@@ -35,6 +35,78 @@ const FAQS = [
   },
 ];
 
+function FAQItem({ faq, isOpen, onToggle, theme }: {
+  faq: typeof FAQS[0];
+  isOpen: boolean;
+  onToggle: () => void;
+  theme: any;
+}) {
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [height, setHeight] = useState(0);
+
+  useEffect(() => {
+    if (contentRef.current) {
+      setHeight(contentRef.current.scrollHeight);
+    }
+  }, [isOpen]);
+
+  return (
+    <div
+      style={{
+        borderBottom: `1px solid ${theme.border}`,
+        borderRadius: "8px",
+        transition: "background 0.2s ease",
+        backgroundColor: isOpen ? `${theme.text}03` : "transparent",
+      }}
+      onMouseEnter={(e) => { if (!isOpen) e.currentTarget.style.backgroundColor = `${theme.text}05`; }}
+      onMouseLeave={(e) => { if (!isOpen) e.currentTarget.style.backgroundColor = "transparent"; }}
+    >
+      <button
+        onClick={onToggle}
+        style={{
+          width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "18px 0", background: "none", border: "none", cursor: "pointer",
+          textAlign: "left", gap: "16px",
+        }}
+        aria-expanded={isOpen}
+      >
+        <span className="font-body" style={{
+          fontSize: "15px", fontWeight: 500,
+          color: isOpen ? theme.accent : theme.text,
+          transition: "color 0.2s ease",
+        }}>
+          {faq.q}
+        </span>
+        <ChevronDown
+          size={16}
+          style={{
+            color: isOpen ? theme.accent : theme.faint,
+            flexShrink: 0,
+            transition: "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s ease",
+            transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
+          }}
+        />
+      </button>
+      <div
+        ref={contentRef}
+        style={{
+          maxHeight: isOpen ? `${height + 20}px` : "0",
+          opacity: isOpen ? 1 : 0,
+          overflow: "hidden",
+          transition: "max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease 0.05s",
+        }}
+      >
+        <p className="font-body" style={{
+          fontSize: "14px", color: theme.muted, lineHeight: 1.65,
+          padding: "0 0 18px",
+        }}>
+          {faq.a}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function FAQ() {
   const { theme } = useTheme();
   const [openIndex, setOpenIndex] = useState<number | null>(null);
@@ -54,44 +126,15 @@ export default function FAQ() {
 
         {/* FAQ Items */}
         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-          {FAQS.map((faq, i) => {
-            const isOpen = openIndex === i;
-            return (
-              <div key={i} style={{ borderBottom: `1px solid ${theme.border}`, borderRadius: "8px", transition: "background 0.2s ease" }}
-                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = `${theme.text}05`; }}
-                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}>
-                <button
-                  onClick={() => setOpenIndex(isOpen ? null : i)}
-                  style={{
-                    width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
-                    padding: "18px 0", background: "none", border: "none", cursor: "pointer",
-                    textAlign: "left", gap: "16px",
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.color = theme.accent; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.color = theme.text; }}
-                >
-                  <span className="font-body" style={{ fontSize: "15px", fontWeight: 500, color: isOpen ? theme.accent : theme.text, transition: "color 0.15s ease" }}>
-                    {faq.q}
-                  </span>
-                  <ChevronDown
-                    size={16}
-                    style={{
-                      color: theme.faint, flexShrink: 0, transition: "transform 0.2s ease",
-                      transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
-                    }}
-                  />
-                </button>
-                <div style={{
-                  maxHeight: isOpen ? "200px" : "0", overflow: "hidden",
-                  transition: "max-height 0.3s ease",
-                }}>
-                  <p className="font-body" style={{ fontSize: "14px", color: theme.muted, lineHeight: 1.65, paddingBottom: isOpen ? "18px" : "0" }}>
-                    {faq.a}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
+          {FAQS.map((faq, i) => (
+            <FAQItem
+              key={i}
+              faq={faq}
+              isOpen={openIndex === i}
+              onToggle={() => setOpenIndex(openIndex === i ? null : i)}
+              theme={theme}
+            />
+          ))}
         </div>
       </div>
     </section>
