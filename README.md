@@ -1,6 +1,6 @@
 <div align="center">
 
-# ⟨/⟩ CodeIQ
+# CodeIQ
 
 ### **Code Smarter. Run Faster.**
 
