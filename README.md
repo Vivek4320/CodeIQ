@@ -1,13 +1,6 @@
 <div align="center">
 
-```
-  ██████╗ ██████��╗███╗   ██╗██╗██████╗ ██████��� ███████╗
- ██╔════╝ ██╔════╝████╗  ██║██║██╔══██╗██╔══██╗██╔════╝
- ╚█████╗  █████╗  ██╔██╗ ██║██║██████╔╝██████╔╝█████╗
-  ╚═══██╗ ██╔══╝  ██║╚██╗██║██║██╔═══╝ ██╔══██╗██╔══╝
- ██████╔╝ ███████╗██║ ╚████║██║██║     ██║  ██║███████╗
- ╚═════╝  ╚══════╝╚═╝  ╚═══╝╚═╝╚═╝     ╚═╝  ╚═╝╚══════╝
-```
+<h1>⟨/⟩ <b>CodeIQ</b></h1>
 
 ### **Code Smarter. Run Faster.**
 
@@ -31,16 +24,16 @@ A full-stack, browser-based code editor with AI-powered code completion, live ex
 CodeIQ is a full-featured online code editor that lets you write, execute, and share code across 12+ programming languages — directly from your browser. No installations. No configurations. Just code.
 
 ```
-┌─────────────────────────────────────────────────────┐
-│  // Write code                                      │
-│  console.log("Hello, World!");                      │
-│                                                     │
-│  // Run instantly                                   │
-│  ▶ Output: Hello, World!                            │
-│                                                     │
-│  // Share with anyone                               │
-│  🔗 https://codeiq.dev/share/abc123                 │
-└─────────────────────────────────────────────────────┘
++-----------------------------------------------------+
+|  // Write code                                      |
+|  console.log("Hello, World!");                      |
+|                                                     |
+|  // Run instantly                                   |
+|  > Output: Hello, World!                            |
+|                                                     |
+|  // Share with anyone                               |
+|  https://codeiq.dev/share/abc123                    |
++-----------------------------------------------------+
 ```
 
 ---
@@ -74,20 +67,20 @@ CodeIQ is a full-featured online code editor that lets you write, execute, and s
 |----------|:--------------:|:-----------------:|
 | JavaScript | Live (VM sandbox) | — |
 | TypeScript | Live (VM sandbox) | — |
-| Python | Piston API | ✅ |
+| Python | Piston API | Yes |
 | C | Piston API | — |
 | C++ | Piston API | — |
 | Java | Piston API (login required) | — |
-| Go | Piston API | ✅ |
+| Go | Piston API | Yes |
 | Rust | Piston API | — |
-| Ruby | Piston API | ✅ |
+| Ruby | Piston API | Yes |
 | Haskell | Piston API | — |
 | HTML | Live preview | — |
 | CSS | Live preview | — |
 
 ---
 
-## AI Agent — CodeIQ
+## AI Agent
 
 The built-in AI agent can:
 
@@ -97,25 +90,25 @@ The built-in AI agent can:
 - **Run & verify** — executes code to confirm it actually works
 
 ```
-┌──────────────────────────────────────┐
-│  🤖 CodeIQ Agent              python │
-├──────────────────────────────────────┤
-│  💬 User: Fix the bug in this code   │
-│                                      │
-│  ✓ Run code                   done   │
-│                                      │
-│  Found the issue — `nums` was being  │
-│  shadowed by the loop variable.     │
-│                                      │
-│  def find_max(nums):                 │
-│      maximum = nums[0]              │
-│      for num in nums[1:]:           │
-│          if num > maximum:           │
-│              maximum = num           │
-│      return maximum                  │
-│                                      │
-│  ✓ Output: 9                         │
-└──────────────────────────────────────┘
++--------------------------------------+
+|  CodeIQ Agent                 python |
++--------------------------------------+
+|  User: Fix the bug in this code      |
+|                                      |
+|  > Run code                   done   |
+|                                      |
+|  Found the issue: `nums` was being   |
+|  shadowed by the loop variable.      |
+|                                      |
+|  def find_max(nums):                 |
+|      maximum = nums[0]              |
+|      for num in nums[1:]:           |
+|          if num > maximum:           |
+|              maximum = num           |
+|      return maximum                  |
+|                                      |
+|  > Output: 9                         |
++--------------------------------------+
 ```
 
 ---
@@ -124,38 +117,38 @@ The built-in AI agent can:
 
 | Theme | Accent | Description |
 |-------|--------|-------------|
-| **Midnight** | ⬜ White | Clean dark with white accents |
-| **Cyberpunk** | 🩷 Neon Pink | Neon pink on deep purple |
-| **Retro Gaming** | 🟡 Yellow | Yellow on navy blue |
-| **Neon Nights** | 🟣 Purple | Purple on dark blue |
-| **Deep Ocean** | 🔵 Cyan | Cyan on dark teal |
-| **Hacker** | 🟢 Green | Green on black |
-| **Light Mode** | ⬛ Dark | Clean white with black text |
+| **Midnight** | White | Clean dark with white accents |
+| **Cyberpunk** | Neon Pink | Neon pink on deep purple |
+| **Retro Gaming** | Yellow | Yellow on navy blue |
+| **Neon Nights** | Purple | Purple on dark blue |
+| **Deep Ocean** | Cyan | Cyan on dark teal |
+| **Hacker** | Green | Green on black |
+| **Light Mode** | Dark | Clean white with black text |
 
 ---
 
 ## Security
 
-- ✅ Rate limiting on code execution (50 req/min per IP)
-- ✅ Code size limit (50KB max)
-- ✅ Google JWT verified server-side
-- ✅ Admin panel with separate authentication
-- ✅ Java requires login on every execution
-- ✅ SQL injection prevention (parameterized queries)
-- ✅ XSS protection via React's built-in sanitization
-- ✅ KeyKing zero-trust AI routing (no raw API keys)
-- ✅ VM sandboxing for JavaScript/TypeScript execution
+- Rate limiting on code execution (50 req/min per IP)
+- Code size limit (50KB max)
+- Google JWT verified server-side
+- Admin panel with separate authentication
+- Java requires login on every execution
+- SQL injection prevention (parameterized queries)
+- XSS protection via React's built-in sanitization
+- KeyKing zero-trust AI routing (no raw API keys)
+- VM sandboxing for JavaScript/TypeScript execution
 
 ---
 
 ## Performance
 
-- ⚡ Next.js 16 with Turbopack
-- ⚡ Lazy-loaded components (AgentPanel, LandingSections)
-- ⚡ CodeMirror 6 with line wrapping
-- ⚡ Service worker for offline caching
-- ⚡ PWA manifest for native app feel
-- ⚡ Optimized loading screen (~1.2s)
+- Next.js 16 with Turbopack
+- Lazy-loaded components (AgentPanel, LandingSections)
+- CodeMirror 6 with line wrapping
+- Service worker for offline caching
+- PWA manifest for native app feel
+- Optimized loading screen (~1.2s)
 
 ---
 
@@ -167,7 +160,7 @@ MIT © [Vivek Pankhaniya](https://github.com/vivekpankhaniya)
 
 <div align="center">
 
-**Built with ❤️ using Next.js 16, React 19, and Supabase**
+**Built with Next.js 16, React 19, and Supabase**
 
 *Write code. Run it instantly. Share it with the world.*
 
