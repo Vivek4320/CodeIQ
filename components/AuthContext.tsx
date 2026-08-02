@@ -129,14 +129,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push("/");
   }, [router]);
 
-  if (loading) {
-    return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#000", color: "#fff" }}>
-        <span className="font-mono" style={{ fontSize: "13px", opacity: 0.5 }}>Loading...</span>
-      </div>
-    );
-  }
-
   return (
     <AuthContext.Provider value={{ user, login, signup, loginWithGoogle, logout }}>
       {children}

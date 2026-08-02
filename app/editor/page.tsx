@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ArrowLeft, History, Share2, Copy, Check, X, Clock, Palette, Bot } from "lucide-react";
@@ -76,7 +76,7 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(diff / 3600)}h ago`;
 }
 
-export default function EditorPage() {
+function EditorPage() {
   const { theme, themeKey, setTheme } = useTheme();
   const { user } = useAuth();
   const isMobile = useIsMobile();
@@ -882,5 +882,14 @@ export default function EditorPage() {
         </div>
       )}
     </div>
+  );
+}
+
+// Wrap with Suspense for useSearchParams
+export default function EditorPageWrapper() {
+  return (
+    <Suspense fallback={<div style={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#000", color: "#fff" }}><span style={{ fontSize: "13px", opacity: 0.5 }}>Loading editor...</span></div>}>
+      <EditorPage />
+    </Suspense>
   );
 }
