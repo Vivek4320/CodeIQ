@@ -4,12 +4,22 @@ let pool: Pool | null = null;
 
 function getPool(): Pool {
   if (!pool) {
+    const connectionString = process.env.DATABASE_URL;
+    if (!connectionString) {
+      throw new Error("DATABASE_URL is not set");
+    }
+
     pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
+      connectionString,
       ssl: { rejectUnauthorized: false },
       max: 5,
       idleTimeoutMillis: 10000,
       connectionTimeoutMillis: 15000,
+    });
+
+    // Handle pool errors
+    pool.on("error", (err) => {
+      console.error("Database pool error:", err.message);
     });
   }
   return pool;
@@ -81,7 +91,6 @@ export async function ensureTables() {
   }
 }
 
-// Don't auto-call ensureTables — let API routes call it explicitly
-const tablesReady = Promise.resolve();
+const tablesReady = ensureTables();
 export { tablesReady };
 export default pool;

@@ -24,8 +24,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    const email = localStorage.getItem("codeiq_admin");
-    setAdminEmail(email);
+    try {
+      const email = localStorage.getItem("codeiq_admin");
+      setAdminEmail(email);
+    } catch {}
     setChecking(false);
   }, []);
 
@@ -60,7 +62,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         display: "none", alignItems: "center", justifyContent: "space-between",
         padding: "0 16px", borderBottom: `1px solid ${theme.border}`,
         backgroundColor: theme.panel,
-      }} className="admin-mobile-header">
+      }} className="admin-mobile-header" suppressHydrationWarning>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <Logo iconSize={18} textSize={0} />
           <span style={{ fontSize: "12px", fontWeight: 600 }}>Admin</span>
@@ -130,8 +132,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             transform: translateX(-100%) !important;
             box-shadow: 4px 0 20px rgba(0,0,0,0.3);
           }
-          .admin-sidebar[style*="translateX(0)"],
-          .admin-sidebar { transform: ${sidebarOpen ? "translateX(0)" : "translateX(-100%)"} !important; }
+          .admin-sidebar.open {
+            transform: translateX(0) !important;
+          }
           .admin-main {
             padding: 64px 16px 16px !important;
           }
