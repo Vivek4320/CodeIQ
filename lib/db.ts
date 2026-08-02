@@ -2,20 +2,29 @@ import { Pool } from "pg";
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
-  max: 10,
-  idleTimeoutMillis: 5000,
-  connectionTimeoutMillis: 5000,
+  ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
+  max: 5,
+  idleTimeoutMillis: 10000,
+  connectionTimeoutMillis: 10000,
 });
 
-// Helper: run query and return rows (compatible with mysql2 format)
+// Helper: run query and return rows
 export async function query(sql: string, params?: any[]): Promise<any[]> {
-  const result = await pool.query(sql, params);
-  return result.rows;
+  try {
+    const result = await pool.query(sql, params);
+    return result.rows;
+  } catch (error: any) {
+    console.error("Query error:", error.message);
+    throw error;
+  }
 }
 
-// Ensure ALL tables exist ONCE at startup
-const tablesReady = (async () => {
+// Ensure ALL tables exist at startup
+let tablesInitialized = false;
+
+export async function ensureTables() {
+  if (tablesInitialized) return;
+
   try {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
@@ -121,17 +130,22 @@ const tablesReady = (async () => {
         ('Go', 'go', '.go', 'go', 'go run {file}', NULL, 'go', '1.16.2', TRUE, 'systems', 7),
         ('Rust', 'rust', '.rs', 'rustc', NULL, 'rustc {file} -o {out}', 'rust', '1.68.2', FALSE, 'systems', 8),
         ('Ruby', 'ruby', '.rb', 'ruby', 'ruby {file}', NULL, 'ruby', '3.0.1', TRUE, 'scripting', 9),
-        ('Haskell', 'haskell', '.hs', 'stack', 'stack exec runghc -- {file}', NULL, 'haskell', '9.4.1', FALSE, 'functional', 10),
-        ('Kotlin', 'kotline', '.kt', NULL, NULL, NULL, 'kotlin', '1.8.20', FALSE, 'modern', 11),
-        ('Swift', 'swift', '.swift', NULL, NULL, NULL, 'swift', '5.3.3', FALSE, 'modern', 12)
+        ('Haskell', 'haskell', '.hs', 'stack', 'stack exec runghc -- {file}', NULL, 'haskell', '9.4.1', FALSE, 'functional', 10)
       `);
     }
 
-    console.log("Database tables ready (PostgreSQL)");
-  } catch (err) {
-    console.error("Database init error:", err);
+    tablesInitialized = true;
+    console.log("Database tables ready");
+  } catch (err: any) {
+    console.error("Database init error:", err.message);
   }
-})();
+}
+
+// Auto-initialize on first import
+ensureTables();
+
+// Alias for backward compatibility
+const tablesReady = ensureTables();
 
 export { tablesReady };
 export default pool;

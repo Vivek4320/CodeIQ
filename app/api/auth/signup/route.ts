@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
-import { query } from "@/lib/db";
+import { query, ensureTables } from "@/lib/db";
 
 export async function POST(req: Request) {
   try {
+    await ensureTables();
+
     const { name, email, password } = await req.json();
 
     if (!name || !email || !password) {
@@ -25,8 +27,8 @@ export async function POST(req: Request) {
       user: { id: userId, name, email },
       message: "Account created successfully",
     });
-  } catch (error) {
-    console.error("Signup error:", error);
-    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
+  } catch (error: any) {
+    console.error("Signup error:", error.message);
+    return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

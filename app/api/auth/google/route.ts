@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { query } from "@/lib/db";
+import { query, ensureTables } from "@/lib/db";
 
 export async function POST(req: Request) {
   try {
+    await ensureTables();
     const { credential } = await req.json();
 
     if (!credential) {

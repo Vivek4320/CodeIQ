@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
-import { query } from "@/lib/db";
+import { query, ensureTables } from "@/lib/db";
 
 export async function POST(req: Request) {
   try {
+    await ensureTables();
+
     const { email } = await req.json();
 
     if (!email) {
@@ -16,8 +18,8 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ user: rows[0] });
-  } catch (error) {
-    console.error("Auth check error:", error);
+  } catch (error: any) {
+    console.error("Auth check error:", error.message);
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }
