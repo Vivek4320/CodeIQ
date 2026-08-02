@@ -81,6 +81,7 @@ export async function ensureTables() {
   }
 }
 
-const tablesReady = ensureTables();
+// Don't auto-call ensureTables — let API routes call it explicitly
+const tablesReady = Promise.resolve();
 export { tablesReady };
 export default pool;
