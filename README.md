@@ -8,6 +8,8 @@
 
 A modern, browser-based code editor with AI-powered code completion, live execution, 12+ language support, and a premium multi-theme UI — built for developers who ship fast.
 
+🚀 **Live Demo:** https://code-iq-ai.vercel.app/
+
 <br>
 
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js)
