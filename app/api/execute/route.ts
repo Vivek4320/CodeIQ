@@ -113,10 +113,21 @@ export async function POST(req: Request) {
       }
     }
 
-    // If stdin input provided, use async execution with pipe
-    if (stdinInput !== undefined) {
-      const stdinResult = await executeWithStdin(language, code, stdinInput, inputPrompts);
-      if (stdinResult) return stdinResult;
+    // If stdin input provided, inject into code for Python/others
+    if (stdinInput !== undefined && stdinInput.trim()) {
+      const injectedCode = injectStdin(language, code, stdinInput, inputPrompts);
+      if (injectedCode) {
+        // Run with injected input
+        const result = tryLocalExec(language, injectedCode);
+        if (result) return result;
+        const pistonResult = await executeViaPiston(language, injectedCode);
+        if (pistonResult) return pistonResult;
+        const sim = SIMULATORS[language];
+        if (sim) {
+          const output = sim(injectedCode);
+          return NextResponse.json({ output, error: null });
+        }
+      }
     }
 
     // Try local compiler first (works in dev + Docker with compilers installed)
@@ -702,6 +713,81 @@ function splitArgs(argsStr: string): string[] {
   }
   if (current) args.push(current);
   return args;
+}
+
+// Inject stdin input into code (replaces input() calls with provided values)
+function injectStdin(lang: string, code: string, stdinInput: string, inputPrompts?: string[]): string | null {
+  const lines = stdinInput.split("\n").filter(l => l.trim() !== "");
+
+  if (lang === "python") {
+    // Replace input() calls with hardcoded values
+    let injected = code;
+    let inputIndex = 0;
+
+    // Match input("prompt") or input() patterns
+    injected = injected.replace(/input\s*\(\s*["']([^"']*)["']\s*\)/g, (_, prompt) => {
+      const value = lines[inputIndex] || "";
+      inputIndex++;
+      return `"${value}"`;
+    });
+    injected = injected.replace(/input\s*\(\s*\)/g, () => {
+      const value = lines[inputIndex] || "";
+      inputIndex++;
+      return `"${value}"`;
+    });
+
+    return injected;
+  }
+
+  if (lang === "javascript" || lang === "typescript") {
+    // Replace prompt() calls with hardcoded values
+    let injected = code;
+    let inputIndex = 0;
+    injected = injected.replace(/prompt\s*\(\s*["']([^"']*)["']\s*\)/g, (_, prompt) => {
+      const value = lines[inputIndex] || "";
+      inputIndex++;
+      return `"${value}"`;
+    });
+    injected = injected.replace(/prompt\s*\(\s*\)/g, () => {
+      const value = lines[inputIndex] || "";
+      inputIndex++;
+      return `"${value}"`;
+    });
+    return injected;
+  }
+
+  if (lang === "ruby") {
+    let injected = code;
+    let inputIndex = 0;
+    // Replace gets with hardcoded values
+    injected = injected.replace(/gets\.chomp/g, () => {
+      const value = lines[inputIndex] || "";
+      inputIndex++;
+      return `"${value}"`;
+    });
+    injected = injected.replace(/gets/g, () => {
+      const value = lines[inputIndex] || "";
+      inputIndex++;
+      return `"${value}"`;
+    });
+    return injected;
+  }
+
+  if (lang === "go") {
+    // For Go, we can use a simulated approach
+    // Replace fmt.Scan with hardcoded values
+    let injected = code;
+    let inputIndex = 0;
+    injected = injected.replace(/fmt\.Scan\s*\(\s*&\w+\s*\)/g, () => {
+      const value = lines[inputIndex] || "0";
+      inputIndex++;
+      return `fmt.Print("${value}")`;
+    });
+    return injected;
+  }
+
+  // For other languages, return null (use simulator)
+  return null;
 }
 
 const SIMULATORS: Record<string, (code: string) => string[]> = {
