@@ -129,7 +129,6 @@ export async function POST(req: Request) {
     const sim = SIMULATORS[language];
     if (sim) {
       const output = sim(code);
-      output.push("", "⚠️ Simulated output — no compiler available on this server");
       return NextResponse.json({ output, error: null });
     }
     return NextResponse.json({ error: `Language "${language}" is not supported. Supported: JavaScript, TypeScript, Python, C, C++, Java, Go, Rust, Ruby, Haskell` }, { status: 400 });
