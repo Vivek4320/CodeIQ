@@ -5,8 +5,7 @@ import { ThemeProvider } from "@/components/landing/ThemeContext";
 import { ThemeStyle } from "@/components/landing/ThemeStyle";
 import { AuthProvider } from "@/components/AuthContext";
 import { ToastProvider } from "@/components/Toast";
-import ConditionalCursor from "@/components/ConditionalCursor";
-import LoadingScreen from "@/components/LoadingScreen";
+import { ClientLoader, ClientCursor } from "@/components/ClientOnly";
 import FeedbackTrigger from "@/components/FeedbackTrigger";
 import PageTransition from "@/components/PageTransition";
 import PWARegister from "@/components/PWARegister";
@@ -103,8 +102,8 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col">
         <PWARegister />
-        <LoadingScreen />
-        <ConditionalCursor />
+        <ClientLoader />
+        <ClientCursor />
         <ThemeProvider>
           <ThemeStyle />
           <AuthProvider>
