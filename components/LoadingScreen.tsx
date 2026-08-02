@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useTheme } from './landing/ThemeContext';
-import { useIsMobile } from '@/hooks/useMediaQuery';
 
 const PARTICLE_COUNT = 12;
 const MATRIX_CHARS = 'CodeIQ{}[]|+-*&^%$#@!0123456789';
@@ -35,15 +34,16 @@ function generateMatrixColumns() {
 
 export default function LoadingScreen() {
   const { theme } = useTheme();
-  const isMobile = useIsMobile();
   const [visible, setVisible] = useState(true);
   const [opacity, setOpacity] = useState(1);
   const [progress, setProgress] = useState(0);
   const [dotCount, setDotCount] = useState(0);
   const [particles, setParticles] = useState<ReturnType<typeof generateParticles>>([]);
   const [matrixCols, setMatrixCols] = useState<ReturnType<typeof generateMatrixColumns>>([]);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
+    setIsMobile(window.innerWidth < 768);
     setParticles(generateParticles());
     setMatrixCols(generateMatrixColumns());
   }, []);
