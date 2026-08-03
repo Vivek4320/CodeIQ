@@ -851,25 +851,109 @@ const SIMULATORS: Record<string, (code: string) => string[]> = {
     return out;
   },
   c: (code) => {
-    const out = extractPrints(code, [/printf\s*\(\s*"([^"]+)"\s*\)/, /printf\s*\(\s*"%d"\s*,\s*(.+?)\s*\)/]).map(s => s.replace(/\n/g, ""));
+    const vars: Record<string, string> = {};
+    const out: string[] = [];
+    for (const line of code.split("\n")) {
+      const t = line.trim();
+      if (t.startsWith("//") || t.startsWith("/*")) continue;
+      const varMatch = t.match(/^(?:int|float|double|char|long|short|unsigned|const)?\s*(\w+)\s*=\s*(.+?);/);
+      if (varMatch && !t.includes("printf")) {
+        vars[varMatch[1]] = evalExpr(varMatch[2].trim(), vars);
+        continue;
+      }
+      const printfMatch = t.match(/printf\s*\(\s*"([^"]*)"(?:\s*,\s*(.+))?\s*\)/);
+      if (printfMatch) {
+        let fmt = printfMatch[1];
+        const args = printfMatch[2] ? printfMatch[2].split(",").map(a => evalExpr(a.trim(), vars)) : [];
+        let argIdx = 0;
+        fmt = fmt.replace(/%d|%f|%s|%c/g, () => args[argIdx++] || "");
+        out.push(fmt.replace(/\\n/g, ""));
+      }
+    }
     if (!out.length) out.push("(no output)");
     out.push("", "Build succeeded", "Process exited with code 0");
     return out;
   },
   cpp: (code) => {
-    const out = extractPrints(code, [/std::cout\s*<<\s*"([^"]+)"/, /cout\s*<<\s*"([^"]+)"/]);
+    const vars: Record<string, string> = {};
+    const out: string[] = [];
+    for (const line of code.split("\n")) {
+      const t = line.trim();
+      if (t.startsWith("//") || t.startsWith("/*")) continue;
+      const varMatch = t.match(/^(?:int|float|double|string|auto|const|bool|long|short|unsigned)?\s*(\w+)\s*=\s*(.+?);/);
+      if (varMatch && !t.includes("cout")) {
+        vars[varMatch[1]] = evalExpr(varMatch[2].trim(), vars);
+        continue;
+      }
+      const coutMatch = t.match(/(?:std::)?cout\s*<<\s*(.+?)\s*(?:<<\s*endl)?;/);
+      if (coutMatch) {
+        const parts = coutMatch[1].split("<<").map(p => {
+          p = p.trim();
+          if ((p.startsWith('"') && p.endsWith('"')) || (p.startsWith("'") && p.endsWith("'"))) return p.slice(1, -1);
+          return evalExpr(p, vars);
+        });
+        out.push(parts.join("").replace(/\\n/g, ""));
+      }
+    }
     if (!out.length) out.push("(no output)");
     out.push("", "Build succeeded", "Process exited with code 0");
     return out;
   },
   java: (code) => {
-    const out = extractPrints(code, [/System\.out\.println\("([^"]+)"\)/, /System\.out\.println\((.+)\)/]);
+    const vars: Record<string, string> = {};
+    const out: string[] = [];
+    for (const line of code.split("\n")) {
+      const t = line.trim();
+      if (t.startsWith("//")) continue;
+      const varMatch = t.match(/^(?:int|float|double|String|long|short|boolean|char|var)?\s*(\w+)\s*=\s*(.+?);/);
+      if (varMatch && !t.includes("System.out")) {
+        vars[varMatch[1]] = evalExpr(varMatch[2].trim(), vars);
+        continue;
+      }
+      const printMatch = t.match(/System\.out\.println\s*\((.+)\)\s*;/);
+      if (printMatch) {
+        let raw = printMatch[1].trim();
+        if (raw.startsWith('"') && raw.endsWith('"')) {
+          out.push(raw.slice(1, -1).replace(/\\n/g, ""));
+        } else {
+          out.push(evalExpr(raw, vars));
+        }
+      }
+    }
     if (!out.length) out.push("(no output)");
     out.push("", "Process exited with code 0");
     return out;
   },
   go: (code) => {
-    const out = extractPrints(code, [/fmt\.Println\("([^"]+)"\)/, /fmt\.Println\((.+)\)/]);
+    const vars: Record<string, string> = {};
+    const out: string[] = [];
+    for (const line of code.split("\n")) {
+      const t = line.trim();
+      if (t.startsWith("//")) continue;
+      const varMatch = t.match(/^(\w+)\s*:?=\s*(.+)$/);
+      if (varMatch && !t.includes("fmt.Print")) {
+        vars[varMatch[1]] = evalExpr(varMatch[2].trim(), vars);
+        continue;
+      }
+      const printMatch = t.match(/fmt\.Println\s*\((.+)\)/);
+      if (printMatch) {
+        let raw = printMatch[1].trim();
+        if (raw.startsWith('"') && raw.endsWith('"')) {
+          out.push(raw.slice(1, -1).replace(/\\n/g, ""));
+        } else if (raw.startsWith("fmt.Sprintf")) {
+          const fmtMatch = raw.match(/fmt\.Sprintf\s*\(\s*"([^"]*)"\s*(?:,\s*(.+))?\)/);
+          if (fmtMatch) {
+            let fmt = fmtMatch[1];
+            const args = fmtMatch[2] ? fmtMatch[2].split(",").map(a => evalExpr(a.trim(), vars)) : [];
+            let argIdx = 0;
+            fmt = fmt.replace(/%d|%v|%s|%f/g, () => args[argIdx++] || "");
+            out.push(fmt);
+          }
+        } else {
+          out.push(evalExpr(raw, vars));
+        }
+      }
+    }
     if (!out.length) out.push("(no output)");
     out.push("", "Process exited with code 0");
     return out;
@@ -1011,7 +1095,28 @@ const SIMULATORS: Record<string, (code: string) => string[]> = {
     return out;
   },
   ruby: (code) => {
-    const out = extractPrints(code, [/^puts\s+"([^"]+)"$/, /^puts\s+(.+)$/]);
+    const vars: Record<string, string> = {};
+    const out: string[] = [];
+    for (const line of code.split("\n")) {
+      const t = line.trim();
+      if (t.startsWith("#")) continue;
+      const varMatch = t.match(/^(\w+)\s*=\s*(.+)$/);
+      if (varMatch && !t.startsWith("puts")) {
+        vars[varMatch[1]] = evalExpr(varMatch[2].trim(), vars);
+        continue;
+      }
+      const putsMatch = t.match(/^puts\s+(.+)$/);
+      if (putsMatch) {
+        let raw = putsMatch[1].trim();
+        if ((raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith("'") && raw.endsWith("'"))) {
+          out.push(raw.slice(1, -1));
+        } else if (raw.includes("#{")) {
+          out.push(raw.replace(/\#\{([^}]+)\}/g, (_, expr) => evalExpr(expr.trim(), vars)));
+        } else {
+          out.push(evalExpr(raw, vars));
+        }
+      }
+    }
     if (!out.length) out.push("(no output)");
     out.push("", "Process exited with code 0");
     return out;
