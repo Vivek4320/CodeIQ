@@ -1,6 +1,6 @@
-const CACHE_NAME = "codeiq-v2";
+const CACHE_NAME = "codeiq-v3";
 
-// Install — skipWaiting immediately, don't pre-cache (Next.js pages are server-rendered)
+// Install — skipWaiting immediately, no pre-caching
 self.addEventListener("install", () => {
   self.skipWaiting();
 });
@@ -17,39 +17,34 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// Fetch — network first, cache only successful HTML page responses
+// Fetch — network first, NO caching, offline fallback only
 self.addEventListener("fetch", (event) => {
   const { request } = event;
 
   // Only handle GET
   if (request.method !== "GET") return;
 
-  // Skip API calls, Next.js internals, and non-navigation requests
   const url = new URL(request.url);
-  if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/_next/")) return;
 
+  // Skip API calls, Next.js internals, and static assets
+  // Let the browser handle caching for these
+  if (
+    url.pathname.startsWith("/api/") ||
+    url.pathname.startsWith("/_next/") ||
+    url.pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|json)$/)
+  ) {
+    return;
+  }
+
+  // Network first — never cache, just return response
+  // Only use cache as offline fallback
   event.respondWith(
-    fetch(request)
-      .then((response) => {
-        // Only cache successful HTML responses (navigation requests)
-        if (response.ok && request.mode === "navigate") {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, clone);
-          });
-        }
-        return response;
-      })
-      .catch(() => {
-        // Offline — try cached page
-        return caches.match(request).then((cached) => {
-          if (cached) return cached;
-          // Fallback to home page for navigation requests
-          if (request.mode === "navigate") {
-            return caches.match("/") || new Response("Offline", { status: 503 });
-          }
-          return new Response("Offline", { status: 503 });
-        });
-      })
+    fetch(request).catch(() => {
+      // Offline — serve cached home page for navigation
+      if (request.mode === "navigate") {
+        return caches.match("/") || new Response("Offline", { status: 503 });
+      }
+      return new Response("Offline", { status: 503 });
+    })
   );
 });
