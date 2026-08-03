@@ -1,50 +1,28 @@
-const CACHE_NAME = "codeiq-v3";
+const CACHE_NAME = "codeiq-v4";
 
-// Install — skipWaiting immediately, no pre-caching
-self.addEventListener("install", () => {
+// Install — activate immediately, don't cache anything
+self.addEventListener("install", (event) => {
+  // Clear ALL old caches during install
+  event.waitUntil(
+    caches.keys().then((keys) => {
+      return Promise.all(keys.map((key) => caches.delete(key)));
+    })
+  );
   self.skipWaiting();
 });
 
-// Activate — clean old caches
+// Activate — claim all clients immediately
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
-      return Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
-      );
+      return Promise.all(keys.map((key) => caches.delete(key)));
     })
   );
   self.clients.claim();
 });
 
-// Fetch — network first, NO caching, offline fallback only
-self.addEventListener("fetch", (event) => {
-  const { request } = event;
-
-  // Only handle GET
-  if (request.method !== "GET") return;
-
-  const url = new URL(request.url);
-
-  // Skip API calls, Next.js internals, and static assets
-  // Let the browser handle caching for these
-  if (
-    url.pathname.startsWith("/api/") ||
-    url.pathname.startsWith("/_next/") ||
-    url.pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|json)$/)
-  ) {
-    return;
-  }
-
-  // Network first — never cache, just return response
-  // Only use cache as offline fallback
-  event.respondWith(
-    fetch(request).catch(() => {
-      // Offline — serve cached home page for navigation
-      if (request.mode === "navigate") {
-        return caches.match("/") || new Response("Offline", { status: 503 });
-      }
-      return new Response("Offline", { status: 503 });
-    })
-  );
+// Fetch — do NOTHING, let browser handle everything
+// This SW only exists so the PWA is installable
+self.addEventListener("fetch", () => {
+  // Pass through — don't intercept any requests
 });
