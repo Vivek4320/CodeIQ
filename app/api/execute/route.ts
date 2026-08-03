@@ -658,6 +658,27 @@ function safeMathExpr(expr: string): string {
   } catch { return expr; }
 }
 
+// Evaluate simple math expressions with variable support
+function evalExpr(expr: string, vars: Record<string, string>): string {
+  try {
+    // Replace variable names with their values
+    let resolved = expr.replace(/\b([a-zA-Z_]\w*)\b/g, (match) => {
+      if (match in vars) return vars[match];
+      return match;
+    });
+    // Try math evaluation
+    const cleaned = resolved.replace(/[^0-9+\-*/().%\s]/g, "").trim();
+    if (cleaned && /^\d[\d+\-*/().%\s]*$/.test(cleaned)) {
+      const result = Function(`"use strict"; return (${cleaned})`)();
+      return String(result);
+    }
+    return resolved;
+  } catch {
+    return expr;
+  }
+}
+
+// Extract print statements from code
 function extractPrints(code: string, patterns: RegExp[]): string[] {
   const output: string[] = [];
   for (const line of code.split("\n")) {
@@ -792,7 +813,39 @@ function injectStdin(lang: string, code: string, stdinInput: string, inputPrompt
 
 const SIMULATORS: Record<string, (code: string) => string[]> = {
   python: (code) => {
-    const out = extractPrints(code, [/^print\((.+)\)$/, /^print\(\)$/]);
+    const vars: Record<string, string> = {};
+    const out: string[] = [];
+    for (const line of code.split("\n")) {
+      const t = line.trim();
+      if (t.startsWith("#")) continue;
+
+      // Variable assignment: a = 1, b = a + 2, etc.
+      const assignMatch = t.match(/^(\w+)\s*=\s*(.+)$/);
+      if (assignMatch && !t.startsWith("print")) {
+        const [, name, expr] = assignMatch;
+        vars[name] = evalExpr(expr.trim(), vars);
+        continue;
+      }
+
+      // print() call
+      const printMatch = t.match(/^print\s*\((.+)\)\s*$/);
+      if (printMatch) {
+        let raw = printMatch[1].trim();
+        // f-string: f"Hello {name}"
+        if ((raw.startsWith('f"') || raw.startsWith("f'")) && raw.endsWith(raw[1])) {
+          raw = raw.slice(2, -1).replace(/\{([^}]+)\}/g, (_, expr) => evalExpr(expr.trim(), vars));
+          out.push(raw);
+        }
+        // String literal
+        else if ((raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith("'") && raw.endsWith("'"))) {
+          out.push(raw.slice(1, -1));
+        }
+        // Variable or expression
+        else {
+          out.push(evalExpr(raw, vars));
+        }
+      }
+    }
     if (!out.length) out.push("(no output)");
     out.push("", "Process exited with code 0");
     return out;
