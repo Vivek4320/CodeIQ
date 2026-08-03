@@ -9,7 +9,7 @@ import { themeIcons } from "@/components/landing/ThemeIcons";
 import Logo from "@/components/landing/Logo";
 import { useAuth } from "@/components/AuthContext";
 import { useIsMobile } from "@/hooks/useMediaQuery";
-import { Home, Code2, LayoutDashboard, BookOpen, Sparkles, Palette, User, LogIn, Download } from "lucide-react";
+import { Home, Code2, LayoutDashboard, BookOpen, Sparkles, Palette, User, LogIn } from "lucide-react";
 
 export default function Navbar() {
   const { theme, themeKey, setTheme } = useTheme();
@@ -18,8 +18,6 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [themeSheetOpen, setThemeSheetOpen] = useState(false);
-  const [mobileDeferredPrompt, setMobileDeferredPrompt] = useState<any>(null);
-  const [mobileIsInstalled, setMobileIsInstalled] = useState(false);
   const themesLinkRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -39,33 +37,6 @@ export default function Navbar() {
     if (open || profileOpen) document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open, profileOpen]);
-
-  // PWA install prompt listener
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (window.matchMedia("(display-mode: standalone)").matches || (window.navigator as any).standalone) {
-      setMobileIsInstalled(true);
-      return;
-    }
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setMobileDeferredPrompt(e);
-    };
-    window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
-  }, []);
-
-  const handleMobileInstall = async () => {
-    if (mobileDeferredPrompt) {
-      mobileDeferredPrompt.prompt();
-      const { outcome } = await mobileDeferredPrompt.userChoice;
-      if (outcome === "accepted") setMobileIsInstalled(true);
-      setMobileDeferredPrompt(null);
-    } else {
-      // iOS — show instructions
-      alert("To install CodeIQ:\n\n1. Tap the Share button ↗\n2. Tap 'Add to Home Screen'\n3. Tap Add");
-    }
-  };
 
   const navLinks = [
     ...(user ? [{ label: "Editor", href: "/editor", icon: Code2 }] : []),
@@ -102,14 +73,6 @@ export default function Navbar() {
               <Logo iconSize={30} textSize={22} />
             </Link>
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              {!mobileIsInstalled && (
-                <button onClick={handleMobileInstall}
-                  style={{ padding: "6px 12px", fontSize: "11px", fontWeight: 600, backgroundColor: "transparent", color: theme.muted, border: `1px solid ${theme.border}`, borderRadius: "20px", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", transition: "all 0.2s ease" }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.accent; e.currentTarget.style.color = theme.text; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.color = theme.muted; }}>
-                  <Download size={12} /> Install
-                </button>
-              )}
               {user && (
                 <button onClick={() => window.location.href = "/editor"}
                   style={{ padding: "6px 14px", fontSize: "12px", fontWeight: 600, backgroundColor: theme.accent, color: theme.bg, border: "none", borderRadius: "20px", cursor: "pointer", display: "flex", alignItems: "center", gap: "5px" }}>
