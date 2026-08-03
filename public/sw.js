@@ -1,25 +1,7 @@
-const CACHE_NAME = "codeiq-v1";
-const STATIC_ASSETS = [
-  "/",
-  "/editor",
-  "/dashboard",
-  "/features",
-  "/docs",
-  "/login",
-  "/signup",
-  "/manifest.json",
-  "/icons/icon.svg",
-  "/icons/icon-192.png",
-  "/icons/icon-512.png",
-];
+const CACHE_NAME = "codeiq-v2";
 
-// Install — cache static assets
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS);
-    })
-  );
+// Install — skipWaiting immediately, don't pre-cache (Next.js pages are server-rendered)
+self.addEventListener("install", () => {
   self.skipWaiting();
 });
 
@@ -35,40 +17,38 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// Fetch — network first, fallback to cache
+// Fetch — network first, cache only successful HTML page responses
 self.addEventListener("fetch", (event) => {
   const { request } = event;
 
-  // Skip non-GET requests
+  // Only handle GET
   if (request.method !== "GET") return;
 
-  // Skip API calls and dynamic routes
+  // Skip API calls, Next.js internals, and non-navigation requests
   const url = new URL(request.url);
-  if (url.pathname.startsWith("/api/")) return;
+  if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/_next/")) return;
 
   event.respondWith(
     fetch(request)
       .then((response) => {
-        // Clone and cache successful responses
-        if (response.ok) {
-          const responseClone = response.clone();
+        // Only cache successful HTML responses (navigation requests)
+        if (response.ok && request.mode === "navigate") {
+          const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, responseClone);
+            cache.put(request, clone);
           });
         }
         return response;
       })
       .catch(() => {
-        // Network failed — try cache
+        // Offline — try cached page
         return caches.match(request).then((cached) => {
           if (cached) return cached;
-
-          // If it's a page navigation, return the cached home page
+          // Fallback to home page for navigation requests
           if (request.mode === "navigate") {
-            return caches.match("/");
+            return caches.match("/") || new Response("Offline", { status: 503 });
           }
-
-          return new Response("Offline", { status: 503, statusText: "Offline" });
+          return new Response("Offline", { status: 503 });
         });
       })
   );
