@@ -14,7 +14,6 @@ import Logo from "@/components/landing/Logo";
 import CodeEditor from "@/components/editor/CodeEditor";
 import EditorToolbar from "@/components/editor/EditorToolbar";
 import OutputPanel from "@/components/editor/OutputPanel";
-import TemplateSelector from "@/components/editor/TemplateSelector";
 import dynamic from "next/dynamic";
 import Terminal from "@/components/editor/Terminal";
 import { useIsMobile } from "@/hooks/useMediaQuery";
@@ -133,7 +132,6 @@ function EditorPage() {
   // History & Share state
   const [showHistory, setShowHistory] = useState(false);
   const [showAgent, setShowAgent] = useState(false);
-  const [showTemplates, setShowTemplates] = useState(false);
   const [agentKey, setAgentKey] = useState(0);
   const appliedCodeRef = useRef<string | null>(null);
   const [runHistory, setRunHistory] = useState<RunHistory[]>([]);
@@ -618,7 +616,7 @@ function EditorPage() {
         {isWebLanguage ? (
           /* HTML/CSS: Side-by-side on desktop, tabbed on mobile */
           <div style={{ width: "100%", display: "flex", flexDirection: "column", border: `1px solid ${theme.border}`, borderRadius: "8px", overflow: "hidden", minHeight: isMobile ? "auto" : "400px", flex: isMobile ? "none" : 1 }}>
-            <EditorToolbar language={language} onLanguageChange={handleLanguageChange} onRun={handleRun} isRunning={isRunning} saveStatus={saveStatus} onTemplates={() => setShowTemplates(true)} />
+            <EditorToolbar language={language} onLanguageChange={handleLanguageChange} onRun={handleRun} isRunning={isRunning} saveStatus={saveStatus} />
             {isMobile ? (
               /* Mobile: tabbed layout */
               <>
@@ -670,7 +668,7 @@ function EditorPage() {
           /* Other languages: Editor + Output split */
           <>
             <div style={{ width: isMobile ? "100%" : `${splitPos}%`, flex: isMobile ? 1 : "none", display: "flex", flexDirection: "column", border: `1px solid ${theme.border}`, borderRadius: "8px", overflow: "hidden", height: isMobile ? "auto" : "100%" }}>
-              <EditorToolbar language={language} onLanguageChange={handleLanguageChange} onRun={handleRun} isRunning={isRunning} saveStatus={saveStatus} onTemplates={() => setShowTemplates(true)} />
+              <EditorToolbar language={language} onLanguageChange={handleLanguageChange} onRun={handleRun} isRunning={isRunning} saveStatus={saveStatus} />
               <div style={{ flex: 1, minHeight: 0 }}>
                 <CodeEditor language={language} value={code} onChange={handleCodeChange} />
               </div>
@@ -858,15 +856,6 @@ function EditorPage() {
         @keyframes agentFadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes agentSheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
       `}</style>
-
-      {/* Template Selector */}
-      {showTemplates && (
-        <TemplateSelector
-          language={language}
-          onSelect={(templateCode) => { setCode(templateCode); setShowTemplates(false); }}
-          onClose={() => setShowTemplates(false)}
-        />
-      )}
 
       {/* Share modal */}
       {showShare && (
