@@ -164,34 +164,6 @@ No installation needed — just open the link and start coding!
 
 ---
 
-### Run Locally
-
-```bash
-# Clone
-git clone https://github.com/vivekpankhaniya/CodeIQ.git
-cd CodeIQ
-
-# Install
-npm install
-
-# Run
-npm run dev
-```
-
-Open **http://localhost:3000**
-
----
-
-## Deployment
-
-| Platform | Link | Cost |
-|----------|------|------|
-| **Render** | [codeiq-uc5g.onrender.com](https://codeiq-uc5g.onrender.com/) | Free |
-| **Vercel** | [code-iq-ai.vercel.app](https://code-iq-ai.vercel.app/) | Free |
-| **Docker** | `docker run -p 3000:3000 codeiq` | Free |
-
----
-
 ## License
 
 MIT © [Vivek Pankhaniya](https://github.com/vivekpankhaniya)
