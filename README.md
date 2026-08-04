@@ -8,7 +8,7 @@
 
 A modern, browser-based code editor with AI-powered code completion, live execution, 12+ language support, and a premium multi-theme UI — built for developers who ship fast.
 
-🚀 **Live Demo:** https://code-iq-ai.vercel.app/
+🚀 **Live Demo:** https://codeiq-uc5g.onrender.com/
 
 <br>
 
@@ -60,11 +60,10 @@ CodeIQ is a full-featured online code editor that lets you write, execute, and s
 | 8 | **Auto-Save** | Projects saved automatically to Supabase database |
 | 9 | **Shareable Links** | Generate shareable URLs for any code snippet |
 | 10 | **Admin Panel** | Full dashboard with user management, language config, and analytics |
-| 11 | **PWA** | Installable as a native app — works offline with service worker |
-| 12 | **Mobile Nav** | Bottom navigation bar (Instagram/WhatsApp style) on mobile |
-| 13 | **Custom Cursor** | Animated `< >` code bracket cursor with AI orbit ring |
-| 14 | **Animations** | Page transitions, scroll animations, hover micro-interactions |
-| 15 | **Responsive** | Fully responsive — desktop, tablet, and mobile with optimized layouts |
+| 11 | **Mobile Nav** | Bottom navigation bar (Instagram/WhatsApp style) on mobile |
+| 12 | **Custom Cursor** | Animated `< >` code bracket cursor with AI orbit ring |
+| 13 | **Animations** | Page transitions, scroll animations, hover micro-interactions |
+| 14 | **Responsive** | Fully responsive — desktop, tablet, and mobile with optimized layouts |
 
 ---
 
@@ -153,13 +152,19 @@ The built-in AI agent can:
 - Next.js 16 with Turbopack
 - Lazy-loaded components (AgentPanel, LandingSections)
 - CodeMirror 6 with line wrapping
-- Service worker for offline caching
-- PWA manifest for native app feel
 - Optimized loading screen (~1.2s)
 
 ---
 
 ## Getting Started
+
+**🌐 Live:** [codeiq-uc5g.onrender.com](https://codeiq-uc5g.onrender.com/)
+
+No installation needed — just open the link and start coding!
+
+---
+
+### Run Locally
 
 ```bash
 # Clone
@@ -179,10 +184,10 @@ Open **http://localhost:3000**
 
 ## Deployment
 
-| Platform | Command | Cost |
-|----------|---------|------|
-| **Vercel** | `vercel deploy` | Free |
-| **Railway** | `railway up` | $5/mo free credit |
+| Platform | Link | Cost |
+|----------|------|------|
+| **Render** | [codeiq-uc5g.onrender.com](https://codeiq-uc5g.onrender.com/) | Free |
+| **Vercel** | [code-iq-ai.vercel.app](https://code-iq-ai.vercel.app/) | Free |
 | **Docker** | `docker run -p 3000:3000 codeiq` | Free |
 
 ---
