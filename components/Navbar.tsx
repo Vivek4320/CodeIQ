@@ -41,8 +41,8 @@ export default function Navbar() {
   const navLinks = [
     ...(user ? [{ label: "Editor", href: "/editor", icon: Code2 }] : []),
     ...(user ? [{ label: "Dashboard", href: "/dashboard", icon: LayoutDashboard }] : []),
-    { label: "Features", href: user ? "/features" : "/signup", icon: Sparkles },
-    { label: "Docs", href: user ? "/docs" : "/signup", icon: BookOpen },
+    { label: "Features", href: "/features", icon: Sparkles },
+    { label: "Docs", href: "/docs", icon: BookOpen },
   ];
 
   // ─── Mobile: Bottom Navigation Bar ────────────────────────────────
@@ -58,8 +58,8 @@ export default function Navbar() {
         ]
       : [
           { label: "Home", href: "/", icon: Home },
-          { label: "Features", href: "/signup", icon: Sparkles },
-          { label: "Docs", href: "/signup", icon: BookOpen },
+          { label: "Features", href: "/features", icon: Sparkles },
+          { label: "Docs", href: "/docs", icon: BookOpen },
           { label: "Themes", icon: Palette, onClick: () => setThemeSheetOpen(true) },
           { label: "Login", href: "/login", icon: LogIn },
         ];
