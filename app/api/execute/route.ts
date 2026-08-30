@@ -7,8 +7,10 @@ import { query } from "@/lib/db";
 
 const IS_WIN = process.platform === "win32";
 const TMP_DIR = IS_WIN ? (process.env.TEMP || "C:/Temp") : "/tmp";
-const PISTON_API_URL = process.env.PISTON_API_URL || "";
+const JUDGE0_API_URL = process.env.JUDGE0_API_URL || "";
+const JUDGE0_API_KEY = process.env.JUDGE0_API_KEY || "";
 const MAX_CODE_LENGTH = 50000;
+console.log("Executing code using Judge0:", process.env.JUDGE0_API_URL);
 
 // ─── Rate Limiter (in-memory, per-IP) ───
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -50,7 +52,7 @@ if (IS_WIN) {
         break;
       }
     }
-  } catch {}
+  } catch { }
   // Add Go to PATH if installed in default location
   const goPath = "C:/Program Files/Go/bin";
   if (existsSync(join(goPath, "go.exe"))) {
@@ -120,8 +122,13 @@ export async function POST(req: Request) {
         // Run with injected input
         const result = tryLocalExec(language, injectedCode);
         if (result) return result;
-        const pistonResult = await executeViaPiston(language, injectedCode);
-        if (pistonResult) return pistonResult;
+        const judgeResult = await executeViaJudge0(
+          language,
+          injectedCode,
+          stdinInput
+        );
+
+        if (judgeResult) return judgeResult;
         const sim = SIMULATORS[language];
         if (sim) {
           const output = sim(injectedCode);
@@ -134,8 +141,13 @@ export async function POST(req: Request) {
     const result = tryLocalExec(language, code);
     if (result) return result;
     // Try Piston API if configured (for deployments without local compilers)
-    const pistonResult = await executeViaPiston(language, code);
-    if (pistonResult) return pistonResult;
+    const judgeResult = await executeViaJudge0(
+      language,
+      code,
+      stdinInput
+    );
+
+    if (judgeResult) return judgeResult;
     // Last resort: simulator (fake output with warning)
     const sim = SIMULATORS[language];
     if (sim) {
@@ -236,7 +248,7 @@ function executeWithStdin(lang: string, code: string, stdinInput: string, inputP
       env: process.env,
     }, (error, stdout, stderr) => {
       // Cleanup temp file AFTER process finishes
-      try { if (tmpFile && existsSync(tmpFile)) unlinkSync(tmpFile); } catch {}
+      try { if (tmpFile && existsSync(tmpFile)) unlinkSync(tmpFile); } catch { }
 
       // Filter out input prompt lines from output
       let output = (stdout || "") + (stderr || "");
@@ -288,68 +300,163 @@ function findCompiler(name: string): string | null {
         const full = join(base, dir, "mingw64/bin", name + ".exe");
         if (existsSync(full)) return full;
       }
-    } catch {}
+    } catch { }
   }
   return null;
 }
 
 // Piston API language mapping
-const PISTON_LANGUAGES: Record<string, { language: string; version: string }> = {
-  python:  { language: "python",  version: "3.10.0" },
-  c:       { language: "c",       version: "10.2.0" },
-  cpp:     { language: "c++",     version: "10.2.0" },
-  java:    { language: "java",    version: "15.0.2" },
-  go:      { language: "go",      version: "1.16.2" },
-  rust:    { language: "rust",    version: "1.68.2" },
-  ruby:    { language: "ruby",    version: "3.0.1" },
-  haskell: { language: "haskell", version: "9.4.1" },
+const JUDGE0_LANGUAGES: Record<string, number> = {
+  c: 50,
+  cpp: 54,
+  java: 62,
+  javascript: 63,
+  python: 71,
+  go: 60,
+  ruby: 72,
+  rust: 73,
+  typescript: 74,
 };
 
 // Execute code via Piston API (works on any deployment)
-async function executeViaPiston(lang: string, code: string): Promise<NextResponse | null> {
-  const piston = PISTON_LANGUAGES[lang];
-  if (!piston || !PISTON_API_URL) return null;
+async function executeViaJudge0(
+  lang: string,
+  code: string,
+  stdinInput?: string
+): Promise<NextResponse | null> {
+  const languageId = JUDGE0_LANGUAGES[lang];
+
+  if (!languageId || !JUDGE0_API_URL) {
+    return null;
+  }
 
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
 
-    const res = await fetch(`${PISTON_API_URL}/execute`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        language: piston.language,
-        version: piston.version,
-        files: [{ content: code }],
-      }),
-      signal: controller.signal,
+    if (JUDGE0_API_KEY) {
+      headers["X-Auth-Token"] = JUDGE0_API_KEY;
+    }
+
+    // 1. Submit code
+    const submitRes = await fetch(
+      `${JUDGE0_API_URL}/submissions?base64_encoded=false&wait=false`,
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          language_id: languageId,
+          source_code: code,
+          stdin: stdinInput || "",
+        }),
+      }
+    );
+
+    if (!submitRes.ok) {
+      console.error("Judge0 submission failed:", await submitRes.text());
+      return null;
+    }
+
+    const submission = await submitRes.json();
+    const token = submission.token;
+
+    if (!token) {
+      return NextResponse.json({
+        output: [],
+        error: "Judge0 did not return a submission token.",
+      });
+    }
+
+    // 2. Poll result
+    const maxAttempts = 20;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      const resultRes = await fetch(
+        `${JUDGE0_API_URL}/submissions/${token}?base64_encoded=false`,
+        {
+          method: "GET",
+          headers,
+        }
+      );
+
+      if (!resultRes.ok) {
+        continue;
+      }
+
+      const result = await resultRes.json();
+
+      // Status 1 = In Queue
+      // Status 2 = Processing
+      if (result.status?.id === 1 || result.status?.id === 2) {
+        continue;
+      }
+
+      const output: string[] = [];
+
+      if (result.compile_output) {
+        output.push(
+          ...result.compile_output
+            .replace(/\r/g, "")
+            .split("\n")
+            .filter(Boolean)
+        );
+      }
+
+      if (result.stdout) {
+        output.push(
+          ...result.stdout
+            .replace(/\r/g, "")
+            .trimEnd()
+            .split("\n")
+        );
+      }
+
+      if (result.stderr) {
+        output.push(
+          ...result.stderr
+            .replace(/\r/g, "")
+            .split("\n")
+            .filter(Boolean)
+        );
+      }
+
+      if (output.length === 0) {
+        output.push("(no output)");
+      }
+
+      const statusId = result.status?.id;
+
+      let error: string | null = null;
+
+      if (statusId === 6) {
+        error = "Compilation Error";
+      } else if (statusId === 5) {
+        error = "Time Limit Exceeded";
+      } else if (statusId >= 7) {
+        error = "Runtime Error";
+      }
+
+      output.push(
+        "",
+        result.status?.description || "Execution finished"
+      );
+
+      return NextResponse.json({
+        output,
+        error,
+      });
+    }
+
+    return NextResponse.json({
+      output: ["⏱️ Execution timed out while waiting for Judge0."],
+      error: "Execution Timeout",
     });
-    clearTimeout(timeout);
 
-    if (!res.ok) return null;
-    const data = await res.json();
-
-    // Collect output from compile + run
-    const parts: string[] = [];
-    if (data.compile?.stderr) parts.push(...data.compile.stderr.split("\n").filter(Boolean));
-    if (data.run?.stdout) parts.push(...data.run.stdout.replace(/\r/g, "").trimEnd().split("\n"));
-    if (data.run?.stderr) parts.push(...data.run.stderr.split("\n").filter(Boolean));
-
-    if (parts.length === 0) parts.push("(no output)");
-
-    // Determine if it's an error
-    const hasError = (data.run?.code !== 0 && data.run?.code !== undefined) || data.compile?.code !== 0;
-    if (hasError && data.compile?.stderr) {
-      return NextResponse.json({ output: parts, error: "Compilation/Runtime Error" });
-    }
-    if (hasError && data.run?.stderr) {
-      return NextResponse.json({ output: parts, error: "Runtime Error" });
-    }
-
-    parts.push("", "Process exited with code 0");
-    return NextResponse.json({ output: parts, error: null });
-  } catch {
-    // Piston unavailable (timeout, network error, etc.)
+  } catch (error) {
+    console.error("Judge0 error:", error);
     return null;
   }
 }
@@ -381,7 +488,7 @@ function tryLocalExec(lang: string, code: string): ReturnType<typeof NextRespons
       if (stderr) return NextResponse.json({ output: stderr.split("\n").filter(Boolean), error: "Runtime Error" });
       if (stdout) return NextResponse.json({ output: stdout.replace(/\r/g, "").trimEnd().split("\n"), error: null });
       return null;
-    } finally { try { unlinkSync(tmpFile); } catch {} }
+    } finally { try { unlinkSync(tmpFile); } catch { } }
   }
 
   if (lang === "java") {
@@ -409,8 +516,8 @@ function tryLocalExec(lang: string, code: string): ReturnType<typeof NextRespons
       if (err.length) return NextResponse.json({ output: err, error: "Compilation/Runtime Error" });
       return null;
     } finally {
-      try { unlinkSync(actualSrcFile); } catch {}
-      try { unlinkSync(join(TMP_DIR, className + ".class")); } catch {}
+      try { unlinkSync(actualSrcFile); } catch { }
+      try { unlinkSync(join(TMP_DIR, className + ".class")); } catch { }
     }
   }
 
@@ -434,8 +541,8 @@ function tryLocalExec(lang: string, code: string): ReturnType<typeof NextRespons
       if (err.length) return NextResponse.json({ output: err, error: "Compilation/Runtime Error" });
       return null;
     } finally {
-      try { unlinkSync(srcFile); } catch {}
-      try { unlinkSync(binFile); } catch {}
+      try { unlinkSync(srcFile); } catch { }
+      try { unlinkSync(binFile); } catch { }
     }
   }
 
@@ -457,8 +564,8 @@ function tryLocalExec(lang: string, code: string): ReturnType<typeof NextRespons
       if (err.length) return NextResponse.json({ output: err, error: "Compilation Error" });
       return null;
     } finally {
-      try { unlinkSync(srcFile); } catch {}
-      try { unlinkSync(binFile); } catch {}
+      try { unlinkSync(srcFile); } catch { }
+      try { unlinkSync(binFile); } catch { }
     }
   }
 
@@ -480,8 +587,8 @@ function tryLocalExec(lang: string, code: string): ReturnType<typeof NextRespons
       if (err.length) return NextResponse.json({ output: err, error: "Compilation Error" });
       return null;
     } finally {
-      try { unlinkSync(srcFile); } catch {}
-      try { unlinkSync(binFile); } catch {}
+      try { unlinkSync(srcFile); } catch { }
+      try { unlinkSync(binFile); } catch { }
     }
   }
 
@@ -504,8 +611,8 @@ function tryLocalExec(lang: string, code: string): ReturnType<typeof NextRespons
       if (err.length) return NextResponse.json({ output: err, error: "Compilation Error" });
       return null;
     } finally {
-      try { unlinkSync(srcFile); } catch {}
-      try { if (existsSync(binFile)) unlinkSync(binFile); } catch {}
+      try { unlinkSync(srcFile); } catch { }
+      try { if (existsSync(binFile)) unlinkSync(binFile); } catch { }
     }
   }
 
@@ -527,7 +634,7 @@ function tryLocalExec(lang: string, code: string): ReturnType<typeof NextRespons
       if (stderr) return NextResponse.json({ output: stderr.split("\n").filter(Boolean), error: "Runtime Error" });
       if (stdout) return NextResponse.json({ output: stdout.replace(/\r/g, "").trimEnd().split("\n"), error: null });
       return null;
-    } finally { try { unlinkSync(srcFile); } catch {} }
+    } finally { try { unlinkSync(srcFile); } catch { } }
   }
 
   // Haskell — use stack runghc
@@ -548,7 +655,7 @@ function tryLocalExec(lang: string, code: string): ReturnType<typeof NextRespons
       if (stderr) return NextResponse.json({ output: stderr.split("\n").filter(Boolean), error: "Runtime Error" });
       if (stdout) return NextResponse.json({ output: stdout.replace(/\r/g, "").trimEnd().split("\n"), error: null });
       return null;
-    } finally { try { unlinkSync(srcFile); } catch {} }
+    } finally { try { unlinkSync(srcFile); } catch { } }
   }
 
   return null;
@@ -572,13 +679,17 @@ function executeJS(code: string) {
         },
       },
     },
-    process: { stdout: { write: (data: any) => {
-      const s = String(data);
-      if (logs.length === 0) logs.push("");
-      logs[logs.length - 1] += s;
-      if (s.endsWith("\n")) logs.push("");
-      return true;
-    } } },
+    process: {
+      stdout: {
+        write: (data: any) => {
+          const s = String(data);
+          if (logs.length === 0) logs.push("");
+          logs[logs.length - 1] += s;
+          if (s.endsWith("\n")) logs.push("");
+          return true;
+        }
+      }
+    },
     Math, Date, JSON, parseInt, parseFloat, String, Number, Boolean,
     Array, Object, RegExp, Map, Set, Promise, setTimeout, setInterval,
   };
@@ -1177,7 +1288,7 @@ function stripTypeScript(code: string): string {
     for (const gt of genericTypes) line = line.replace(new RegExp(`(\w+)\s*:\s*${gt}\b`, "g"), "$1");
     line = line.replace(/\)\s*:\s*(?:string|number|boolean|any|void|never|unknown|object|bigint|symbol|undefined|null|Record|Partial|Required|Pick|Omit|Promise|Array)\b\s*([>{=])/g, ")$1");
     line = line.replace(/\)\s*:\s*[A-Z]\w*\s*([>{=])/g, ")$1");
-    for (const gt of genericTypes) { try { line = line.replace(new RegExp(String.raw`)s*:s*${gt}s*([>{=])`, "g"), ")$1"); } catch {} }
+    for (const gt of genericTypes) { try { line = line.replace(new RegExp(String.raw`)s*:s*${gt}s*([>{=])`, "g"), ")$1"); } catch { } }
     line = line.replace(/\bas\s+(?:string|number|boolean|any|void|unknown|object|[\w\[\]<>]+)\b/g, "");
     result.push(line);
   }
