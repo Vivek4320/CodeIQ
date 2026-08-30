@@ -1,6 +1,7 @@
 export interface CompilerLanguage {
   slug: string;
   name: string;
+  editorKey: string; // ⁠navu field — DEFAULT_CODE keys sathe match
   title: string;
   description: string;
   extension: string;
@@ -11,6 +12,7 @@ export const compilerLanguages: CompilerLanguage[] = [
   {
     slug: "python-compiler",
     name: "Python",
+    editorKey: "python",
     title: "Online Python Compiler & Editor — Run Python Code Free | CodeIQ",
     description:
       "Write and run Python 3 code online instantly. Free browser-based Python compiler with AI assistance, no installation needed.",
@@ -20,6 +22,7 @@ export const compilerLanguages: CompilerLanguage[] = [
   {
     slug: "java-compiler",
     name: "Java",
+    editorKey: "java",
     title: "Online Java Compiler & Editor — Run Java Code Free | CodeIQ",
     description:
       "Write and run Java code online instantly. Free browser-based Java compiler with AI assistance, no installation needed.",
@@ -29,6 +32,7 @@ export const compilerLanguages: CompilerLanguage[] = [
   {
     slug: "cpp-online-compiler",
     name: "C++",
+    editorKey: "cpp",
     title: "Online C++ Compiler & Editor — Run C++ Code Free | CodeIQ",
     description:
       "Write and run C++ code online instantly. Free browser-based C++ compiler with AI assistance, no installation needed.",
@@ -38,6 +42,7 @@ export const compilerLanguages: CompilerLanguage[] = [
   {
     slug: "c-compiler",
     name: "C",
+    editorKey: "c",
     title: "Online C Compiler & Editor — Run C Code Free | CodeIQ",
     description:
       "Write and run C code online instantly. Free browser-based C compiler with AI assistance, no installation needed.",
@@ -47,6 +52,7 @@ export const compilerLanguages: CompilerLanguage[] = [
   {
     slug: "javascript-compiler",
     name: "JavaScript",
+    editorKey: "javascript",
     title: "Online JavaScript Compiler & Editor — Run JS Code Free | CodeIQ",
     description:
       "Write and run JavaScript code online instantly. Free browser-based JS editor with AI assistance, no installation needed.",
@@ -56,6 +62,7 @@ export const compilerLanguages: CompilerLanguage[] = [
   {
     slug: "typescript-compiler",
     name: "TypeScript",
+    editorKey: "typescript",
     title: "Online TypeScript Compiler & Editor — Run TS Code Free | CodeIQ",
     description:
       "Write and run TypeScript code online instantly. Free browser-based TS editor with AI assistance, no installation needed.",
@@ -65,6 +72,7 @@ export const compilerLanguages: CompilerLanguage[] = [
   {
     slug: "go-compiler",
     name: "Go",
+    editorKey: "go",
     title: "Online Go (Golang) Compiler & Editor — Run Go Code Free | CodeIQ",
     description:
       "Write and run Go (Golang) code online instantly. Free browser-based Go compiler with AI assistance, no installation needed.",
@@ -74,6 +82,7 @@ export const compilerLanguages: CompilerLanguage[] = [
   {
     slug: "rust-compiler",
     name: "Rust",
+    editorKey: "rust",
     title: "Online Rust Compiler & Editor — Run Rust Code Free | CodeIQ",
     description:
       "Write and run Rust code online instantly. Free browser-based Rust compiler with AI assistance, no installation needed.",
@@ -83,6 +92,7 @@ export const compilerLanguages: CompilerLanguage[] = [
   {
     slug: "ruby-compiler",
     name: "Ruby",
+    editorKey: "ruby",
     title: "Online Ruby Compiler & Editor — Run Ruby Code Free | CodeIQ",
     description:
       "Write and run Ruby code online instantly. Free browser-based Ruby compiler with AI assistance, no installation needed.",
@@ -92,6 +102,7 @@ export const compilerLanguages: CompilerLanguage[] = [
   {
     slug: "haskell-compiler",
     name: "Haskell",
+    editorKey: "haskell",
     title: "Online Haskell Compiler & Editor — Run Haskell Code Free | CodeIQ",
     description:
       "Write and run Haskell code online instantly. Free browser-based Haskell compiler with AI assistance, no installation needed.",
@@ -101,6 +112,7 @@ export const compilerLanguages: CompilerLanguage[] = [
     {
     slug: "html-compiler",
     name: "HTML",
+    editorKey: "html",
     title: "Online HTML Compiler & Live Preview — Run HTML Code Free | CodeIQ",
     description:
       "Write HTML code online with instant live preview. Free browser-based HTML editor, no installation needed.",
@@ -110,12 +122,14 @@ export const compilerLanguages: CompilerLanguage[] = [
   {
     slug: "css-compiler",
     name: "CSS",
+    editorKey: "css",
     title: "Online CSS Compiler & Live Preview — Run CSS Code Free | CodeIQ",
     description:
       "Write and preview CSS code online instantly. Free browser-based CSS editor, no installation needed.",
     extension: "css",
     sampleCode: `body {\n  font-family: sans-serif;\n  background-color: #f0f0f0;\n  text-align: center;\n}`,
   },
+  
 ];
 
 export function getLanguageBySlug(slug: string) {
