@@ -20,29 +20,16 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CodeIQ — Code Smarter. Run Faster.",
-  description: "A modern, browser-based code editor with AI assistance, live execution, and 12+ language support. Write, run, and share code from your browser.",
-  keywords: ["code editor", "online compiler", "AI coding", "programming", "developer tools"],
-  authors: [{ name: "Vivek Pankhaniya" }],
-  creator: "Vivek Pankhaniya",
-
-  // Open Graph
-  openGraph: {
-    type: "website",
-    locale: "en_US",
-    siteName: "CodeIQ",
-    title: "CodeIQ — Code Smarter. Run Faster.",
-    description: "A modern, browser-based code editor with AI assistance, live execution, and 12+ language support.",
+  title: "CodeIQ — Free Online Code Compiler & Editor | 12+ Languages",
+  description: "Write, compile & run code online instantly. Free browser-based IDE with AI assistance for Python, JavaScript, Java, C++ & more. No signup needed.",
+  keywords: ["online compiler", "online code editor", "run code online", "browser IDE", "free compiler"],
+  alternates: {
+    canonical: "https://yourdomain.com",
   },
-
-  // Twitter
-  twitter: {
-    card: "summary_large_image",
-    title: "CodeIQ — Code Smarter. Run Faster.",
-    description: "A modern, browser-based code editor with AI assistance, live execution, and 12+ language support.",
+  verification: {
+    google: "iYCIJ-Qy5f6rKexF-iMawziYVw0-7wHPzef7mP5RxlQ",  
   },
 };
-
 export const viewport: Viewport = {
   themeColor: "#000000",
   width: "device-width",
