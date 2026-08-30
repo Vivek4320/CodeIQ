@@ -140,7 +140,7 @@ export async function POST(req: Request) {
     // Try local compiler first (works in dev + Docker with compilers installed)
     const result = tryLocalExec(language, code);
     if (result) return result;
-    // Try Piston API if configured (for deployments without local compilers)
+   
     const judgeResult = await executeViaJudge0(
       language,
       code,
@@ -305,7 +305,7 @@ function findCompiler(name: string): string | null {
   return null;
 }
 
-// Piston API language mapping
+
 const JUDGE0_LANGUAGES: Record<string, number> = {
   c: 50,
   cpp: 54,
@@ -318,7 +318,7 @@ const JUDGE0_LANGUAGES: Record<string, number> = {
   typescript: 74,
 };
 
-// Execute code via Piston API (works on any deployment)
+
 async function executeViaJudge0(
   lang: string,
   code: string,
