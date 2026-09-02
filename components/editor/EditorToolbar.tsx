@@ -1,6 +1,6 @@
 "use client";
 
-import { Play, FileCode } from "lucide-react";
+import { Play, FileCode, Save } from "lucide-react";
 import { useTheme } from "@/components/landing/ThemeContext";
 import { useIsMobile } from "@/hooks/useMediaQuery";
 import LanguageSelector from "./LanguageSelector";
@@ -9,12 +9,13 @@ interface EditorToolbarProps {
   language: string;
   onLanguageChange: (lang: string) => void;
   onRun: () => void;
+  onSave?: () => void;
   isRunning: boolean;
   saveStatus?: "idle" | "saving" | "saved";
   onTemplates?: () => void;
 }
 
-export default function EditorToolbar({ language, onLanguageChange, onRun, isRunning, saveStatus, onTemplates }: EditorToolbarProps) {
+export default function EditorToolbar({ language, onLanguageChange, onRun, onSave, isRunning, saveStatus, onTemplates }: EditorToolbarProps) {
   const { theme } = useTheme();
   const isMobile = useIsMobile();
   const isWebLanguage = language === "html" || language === "css";
@@ -41,6 +42,14 @@ export default function EditorToolbar({ language, onLanguageChange, onRun, isRun
             onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.accent; e.currentTarget.style.color = theme.text; }}
             onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.color = theme.muted; }}>
             <FileCode size={isMobile ? 12 : 13} /> Templates
+          </button>
+        )}
+        {onSave && (
+          <button onClick={onSave} title="Save code" aria-label="Save code"
+            style={{ display: "flex", alignItems: "center", gap: isMobile ? "4px" : "6px", padding: isMobile ? "5px 10px" : "6px 12px", fontSize: isMobile ? "11px" : "12px", fontWeight: 500, backgroundColor: "transparent", color: saveStatus === "saved" ? "#34D399" : theme.muted, border: `1px solid ${saveStatus === "saved" ? "#34D399" : theme.border}`, borderRadius: "6px", cursor: "pointer", transition: "all 0.2s ease" }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.accent; e.currentTarget.style.color = theme.text; }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = saveStatus === "saved" ? "#34D399" : theme.border; e.currentTarget.style.color = saveStatus === "saved" ? "#34D399" : theme.muted; }}>
+            <Save size={isMobile ? 12 : 13} /> {saveStatus === "saving" ? "Saving..." : "Save"}
           </button>
         )}
         <button onClick={onRun} disabled={isRunning} title="Run code" aria-label={isRunning ? "Running code" : runLabel}

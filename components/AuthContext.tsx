@@ -25,8 +25,8 @@ const AuthContext = createContext<AuthContextValue>({
   logout: () => {},
 });
 
-const PUBLIC_PAGES = ["/", "/login", "/signup"];
-const PROTECTED_PAGES = ["/features", "/docs", "/dashboard", "/editor"];
+const PUBLIC_PAGES = ["/", "/login", "/signup", "/editor", "/features", "/docs"];
+const PROTECTED_PAGES = ["/dashboard"];
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -74,7 +74,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!res.ok) return { ok: false, error: data.error || "Signup failed" };
       localStorage.setItem("codeiq_email", email);
       setUser(data.user);
-      router.push("/");
+      // If coming from editor save prompt, return to editor
+      const hasDraftCode = typeof window !== "undefined" && sessionStorage.getItem("codeiq_draft_code");
+      router.push(hasDraftCode ? "/editor" : "/");
       return { ok: true };
     } catch {
       return { ok: false, error: "Network error. Please try again." };
@@ -92,7 +94,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!res.ok) return { ok: false, error: data.error || "Login failed" };
       localStorage.setItem("codeiq_email", email);
       setUser(data.user);
-      router.push("/");
+      // If coming from editor save prompt, return to editor
+      const hasDraftCode = typeof window !== "undefined" && sessionStorage.getItem("codeiq_draft_code");
+      router.push(hasDraftCode ? "/editor" : "/");
       return { ok: true };
     } catch {
       return { ok: false, error: "Network error. Please try again." };
@@ -113,7 +117,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       localStorage.setItem("codeiq_email", data.user.email);
       setUser(data.user);
-      router.push("/");
+      // If coming from editor save prompt, return to editor
+      const hasDraftCode = typeof window !== "undefined" && sessionStorage.getItem("codeiq_draft_code");
+      router.push(hasDraftCode ? "/editor" : "/");
       return { ok: true };
     } catch {
       return { ok: false, error: "Google sign-in failed. Please try again." };

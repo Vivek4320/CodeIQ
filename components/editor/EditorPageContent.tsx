@@ -18,6 +18,7 @@ import dynamic from "next/dynamic";
 import Terminal from "@/components/editor/Terminal";
 import { useIsMobile } from "@/hooks/useMediaQuery";
 import TemplateSelector from "@/components/editor/TemplateSelector";
+import SavePromptModal from "@/components/editor/SavePromptModal";
 
 const AgentPanel = dynamic(() => import("@/components/editor/AgentPanel"), {
   loading: () => <div style={{ padding: "20px", fontSize: "13px", textAlign: "center", opacity: 0.5 }}>Loading AI Agent...</div>,
@@ -134,6 +135,7 @@ function EditorPage({ initialLanguage }: { initialLanguage?: string } = {}) {
   const [showHistory, setShowHistory] = useState(false);
   const [showAgent, setShowAgent] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [showSavePrompt, setShowSavePrompt] = useState(false);
   const [agentKey, setAgentKey] = useState(0);
   const appliedCodeRef = useRef<string | null>(null);
   const [runHistory, setRunHistory] = useState<RunHistory[]>([]);
@@ -208,6 +210,35 @@ function EditorPage({ initialLanguage }: { initialLanguage?: string } = {}) {
         }
       });
   }, [projectId, user]);
+
+  // Restore draft code when user authenticates after saving prompt
+  useEffect(() => {
+    if (!user) return;
+    
+    const draftCode = sessionStorage.getItem("codeiq_draft_code");
+    if (!draftCode) return;
+
+    const draftLanguage = sessionStorage.getItem("codeiq_draft_language") || "javascript";
+    const draftName = sessionStorage.getItem("codeiq_draft_name") || "untitled";
+    const draftHtml = sessionStorage.getItem("codeiq_draft_html");
+    const draftCss = sessionStorage.getItem("codeiq_draft_css");
+
+    // Only restore if we're still on a default/new project
+    if (currentProjectId === null) {
+      setLanguage(draftLanguage);
+      setProjectName(draftName);
+      setCode(draftCode);
+      if (draftHtml) setHtmlCode(draftHtml);
+      if (draftCss) setCssCode(draftCss);
+    }
+
+    // Clear draft from sessionStorage after restoring
+    sessionStorage.removeItem("codeiq_draft_code");
+    sessionStorage.removeItem("codeiq_draft_language");
+    sessionStorage.removeItem("codeiq_draft_name");
+    sessionStorage.removeItem("codeiq_draft_html");
+    sessionStorage.removeItem("codeiq_draft_css");
+  }, [user]);
 
   // Load run history
   const loadHistory = useCallback(() => {
@@ -457,7 +488,20 @@ function EditorPage({ initialLanguage }: { initialLanguage?: string } = {}) {
   }, [language]);
 
   const handleSave = useCallback(async () => {
-    if (!user) return;
+    // If not authenticated, show prompt to sign up
+    if (!user) {
+      // Store code in sessionStorage before showing prompt
+      sessionStorage.setItem("codeiq_draft_code", code);
+      sessionStorage.setItem("codeiq_draft_language", language);
+      sessionStorage.setItem("codeiq_draft_name", projectName);
+      if (language === "html" || language === "css") {
+        sessionStorage.setItem("codeiq_draft_html", htmlCode);
+        sessionStorage.setItem("codeiq_draft_css", cssCode);
+      }
+      setShowSavePrompt(true);
+      return;
+    }
+
     const isWeb = language === "html" || language === "css";
     const name = isWeb ? projectName : `${projectName}.${FILE_NAMES[language]?.split(".")[1] || "txt"}`;
     try {
@@ -484,7 +528,7 @@ function EditorPage({ initialLanguage }: { initialLanguage?: string } = {}) {
     } catch {
       toast("Failed to save project", "error");
     }
-  }, [user, projectName, language, code, toast, currentProjectId]);
+  }, [user, projectName, language, code, htmlCode, cssCode, currentProjectId, toast]);
 
   // Share code
   const handleShare = useCallback(async () => {
@@ -620,7 +664,7 @@ function EditorPage({ initialLanguage }: { initialLanguage?: string } = {}) {
         {isWebLanguage ? (
           /* HTML/CSS: Side-by-side on desktop, tabbed on mobile */
           <div style={{ width: "100%", display: "flex", flexDirection: "column", border: `1px solid ${theme.border}`, borderRadius: "8px", overflow: "hidden", minHeight: isMobile ? "auto" : "400px", flex: isMobile ? "none" : 1 }}>
-            <EditorToolbar language={language} onLanguageChange={handleLanguageChange} onRun={handleRun} isRunning={isRunning} saveStatus={saveStatus} onTemplates={() => setShowTemplates(true)} />
+            <EditorToolbar language={language} onLanguageChange={handleLanguageChange} onRun={handleRun} onSave={handleSave} isRunning={isRunning} saveStatus={saveStatus} onTemplates={() => setShowTemplates(true)} />
             {isMobile ? (
               /* Mobile: tabbed layout */
               <>
@@ -672,7 +716,7 @@ function EditorPage({ initialLanguage }: { initialLanguage?: string } = {}) {
           /* Other languages: Editor + Output split */
           <>
             <div style={{ width: isMobile ? "100%" : `${splitPos}%`, flex: isMobile ? 1 : "none", display: "flex", flexDirection: "column", border: `1px solid ${theme.border}`, borderRadius: "8px", overflow: "hidden", height: isMobile ? "auto" : "100%" }}>
-              <EditorToolbar language={language} onLanguageChange={handleLanguageChange} onRun={handleRun} isRunning={isRunning} saveStatus={saveStatus} onTemplates={() => setShowTemplates(true)} />
+              <EditorToolbar language={language} onLanguageChange={handleLanguageChange} onRun={handleRun} onSave={handleSave} isRunning={isRunning} saveStatus={saveStatus} onTemplates={() => setShowTemplates(true)} />
               <div style={{ flex: 1, minHeight: 0 }}>
                 <CodeEditor language={language} value={code} onChange={handleCodeChange} />
               </div>
@@ -897,6 +941,9 @@ function EditorPage({ initialLanguage }: { initialLanguage?: string } = {}) {
           </div>
         </div>
       )}
+
+      {/* Save Prompt Modal for anonymous users */}
+      <SavePromptModal isOpen={showSavePrompt} onClose={() => setShowSavePrompt(false)} />
     </div>
   );
 }
