@@ -53,7 +53,7 @@ CodeIQ is a full-featured online code editor that lets you write, execute, and s
 | 1 | **12 Languages** | JavaScript, TypeScript, Python, C, C++, Java, Go, Rust, Ruby, Haskell, HTML, CSS |
 | 2 | **AI Code Agent** | Context-aware code generation, debugging, and explanation via KeyKing SDK |
 | 3 | **AI Completion** | Real-time inline suggestions that adapt to your code context |
-| 4 | **Instant Execution** | JS/TS in VM sandbox, others via Piston API — output in under a second |
+| 4 | **Instant Execution** | JS/TS in VM sandbox, others via Judge0 API — output in under a second |
 | 5 | **Smart Input** | Auto-detects `input()` calls and shows inline input fields |
 | 6 | **Live Preview** | HTML/CSS editor with instant browser preview |
 | 7 | **7 Themes** | Midnight, Cyberpunk, Retro Gaming, Neon Nights, Deep Ocean, Hacker, Light Mode |
@@ -73,14 +73,14 @@ CodeIQ is a full-featured online code editor that lets you write, execute, and s
 |----------|:---------:|:-----:|:------:|
 | JavaScript | Live (VM) | - | Active |
 | TypeScript | Live (VM) | - | Active |
-| Python | Piston API | Yes | Active |
-| C | Piston API | - | Active |
-| C++ | Piston API | - | Active |
-| Java | Piston API | - | Active (Login required) |
-| Go | Piston API | Yes | Active |
-| Rust | Piston API | - | Active |
-| Ruby | Piston API | Yes | Active |
-| Haskell | Piston API | - | Active |
+| Python | Judge0 API | Yes | Active |
+| C | Judge0 API | - | Active |
+| C++ | Judge0 API | - | Active |
+| Java | Judge0 API | - | Active (Login required) |
+| Go | Judge0 API | Yes | Active |
+| Rust | Judge0 API | - | Active |
+| Ruby | Judge0 API | Yes | Active |
+| Haskell | Judge0 API | - | Active |
 | HTML | Live Preview | - | Active |
 | CSS | Live Preview | - | Active |
 
@@ -158,7 +158,7 @@ The built-in AI agent can:
 
 ## Getting Started
 
-**🌐 Live:** [codeiq-uc5g.onrender.com](https://codeiq-uc5g.onrender.com/)
+**🌐 Live:** [code-iq-ai.vercel.app](https://code-iq-ai.vercel.app/)
 
 No installation needed — just open the link and start coding!
 

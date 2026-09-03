@@ -16,7 +16,7 @@ const FEATURES = [
   {
     icon: Zap,
     title: "Instant Execution",
-    desc: "Run code in 12 languages the moment you hit Run. JavaScript and TypeScript execute live in a VM sandbox — others run via Piston API or local compilers.",
+    desc: "Run code in 12 languages the moment you hit Run. JavaScript and TypeScript execute live in a VM sandbox — others run via the Judge0 execution API.",
     details: ["Sub-second output for JS/TS", "12 languages supported", "No setup required", "Real-time results"],
   },
   {
@@ -40,7 +40,7 @@ const FEATURES = [
   {
     icon: Shield,
     title: "Secure Sandboxing",
-    desc: "JavaScript and TypeScript run in an isolated Node.js VM sandbox. Other languages execute via Piston API with no host access.",
+    desc: "JavaScript and TypeScript run in an isolated Node.js VM sandbox. Other languages execute via the Judge0 execution API with no host access.",
     details: ["Isolated VM execution", "Configurable timeout", "No data persistence", "Safe evaluation"],
   },
   {

@@ -19,7 +19,7 @@ const FAQS = [
   },
   {
     q: "Do I need to install anything?",
-    a: "No. CodeIQ runs entirely in your browser. Just open the website, sign in, and start coding. No downloads, no setup, no installations needed.",
+    a: "No. CodeIQ runs entirely in your browser. Just open CodeIQ and start coding. You can write and run code without creating an account—only saving code requires authentication. No downloads, no setup, no installations needed.",
   },
   {
     q: "Can I share my code with others?",
