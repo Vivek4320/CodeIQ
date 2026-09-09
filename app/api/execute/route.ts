@@ -5,6 +5,10 @@ import { writeFileSync, unlinkSync, existsSync } from "fs";
 import { join } from "path";
 import { query } from "@/lib/db";
 
+// Extend Vercel serverless function timeout to 60 seconds
+// (default is 10s on hobby plan, which is too short for Judge0 polling)
+export const maxDuration = 60;
+
 const IS_WIN = process.platform === "win32";
 const TMP_DIR = IS_WIN ? (process.env.TEMP || "C:/Temp") : "/tmp";
 const IS_VERCEL = process.env.VERCEL === "1" || process.env.VERCEL === "true";
@@ -387,6 +391,7 @@ const JUDGE0_LANGUAGES: Record<string, number> = {
   ruby: 72,
   rust: 73,
   typescript: 74,
+  haskell: 85,
 };
 
 
@@ -423,7 +428,7 @@ async function executeViaJudge0(
       {
         method: "POST",
         headers,
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(25000),
         body: JSON.stringify({
           language_id: languageId,
           source_code: code,
@@ -474,7 +479,7 @@ async function executeViaJudge0(
         {
           method: "GET",
           headers,
-          signal: AbortSignal.timeout(10000),
+          signal: AbortSignal.timeout(25000),
         }
       );
 
@@ -520,6 +525,14 @@ async function executeViaJudge0(
         ? (stdout.length > 0 ? stdout : ["(no output)"])
         : (diagnostics.length > 0 ? diagnostics : ["(no output)"]);
 
+      console.info("[Execute] final response", {
+        status,
+        accepted,
+        outputLength: output.length,
+        firstLine: output[0] ?? null,
+        error: accepted ? null : status,
+      });
+
       return NextResponse.json({
         output,
         error: accepted ? null : status,
@@ -534,8 +547,25 @@ async function executeViaJudge0(
     });
 
   } catch (error) {
+    const isAbort = error instanceof Error && error.name === "AbortError";
+    const isTimeout = error instanceof Error && (
+      error.name === "TimeoutError" ||
+      error.message.includes("timed out") ||
+      error.message.includes("timeout")
+    );
+    if (isAbort || isTimeout) {
+      console.warn("[Judge0] request timed out", {
+        error: error instanceof Error ? error.message : "timeout",
+      });
+      return NextResponse.json({
+        output: ["⏱️ Request timed out waiting for the execution service. Please try again."],
+        error: "Execution Timeout",
+        status: "Execution Timeout",
+      });
+    }
     console.error("[Judge0] request error", {
       error: error instanceof Error ? error.message : "unknown-error",
+      name: error instanceof Error ? error.name : "unknown",
     });
     return judge0ServiceResponse(
       "Code execution service is temporarily unavailable.",

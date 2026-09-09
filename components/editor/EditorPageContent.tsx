@@ -402,6 +402,14 @@ function EditorPage({ initialLanguage }: { initialLanguage?: string } = {}) {
         body: JSON.stringify({ language, code }),
       });
       const data = await res.json();
+      console.info("[Execute] API response", {
+        httpStatus: res.status,
+        ok: res.ok,
+        status: data?.status,
+        error: data?.error,
+        outputLength: Array.isArray(data?.output) ? data.output.length : 0,
+        firstLine: Array.isArray(data?.output) ? data.output[0] : null,
+      });
       if (data.error) {
         setOutput([data.error, ...(data.output || [])]);
       } else if (data.output && data.output.length > 0) {
