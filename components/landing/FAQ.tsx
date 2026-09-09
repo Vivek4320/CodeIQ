@@ -31,7 +31,7 @@ const FAQS = [
   },
   {
     q: "Is my code saved?",
-    a: "Yes. Every run is auto-saved to your history, and projects are saved to your account. You can access them anytime from the dashboard.",
+    a: "Projects are saved to your account when you click Save. Runs are recorded in your history so you can review previous executions from the editor.",
   },
 ];
 

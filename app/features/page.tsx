@@ -21,9 +21,9 @@ const FEATURES = [
   },
   {
     icon: GitBranch,
-    title: "Auto-saved History",
-    desc: "Your code is saved automatically as you type. Every run is versioned, so you can always roll back to any previous version.",
-    details: ["Auto-save as you type", "Automatic versioning", "One-click rollback", "Unlimited history"],
+    title: "Run History",
+    desc: "Review your previous executions from the editor. Projects are saved to your account when you click Save.",
+    details: ["Execution history", "Review previous runs", "Project saves on demand", "Accessible from the editor"],
   },
   {
     icon: Share2,

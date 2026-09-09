@@ -34,9 +34,9 @@ const CARDS = [
   },
   {
     icon: Clock,
-    number: "Auto",
-    title: "Always saved",
-    desc: "Code saves automatically as you type. Never lose progress between sessions.",
+    number: "Runs",
+    title: "Run history",
+    desc: "Review previous executions from the editor and save projects when you choose.",
     accent: "#E06C75",
   },
 ];

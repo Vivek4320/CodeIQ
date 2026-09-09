@@ -12,7 +12,7 @@ const STATS = [
 
 const HIGHLIGHTS = [
   "AI-powered code completion",
-  "Auto-save as you type",
+  "Save projects on demand",
   "Instant code execution",
 ];
 

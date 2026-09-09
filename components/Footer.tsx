@@ -22,7 +22,21 @@ export default function Footer() {
     ...(user ? [{ label: "Dashboard", href: "/dashboard" }] : []),
   ];
 
-  const languages = ["JS", "TS", "PY", "C", "C++", "Java", "Go", "Rust", "Ruby", "Haskell", "HTML", "CSS"];
+  /** Language links — descriptive anchor text for SEO internal linking */
+  const languageLinks = [
+    { label: "JavaScript Editor", href: "/javascript-editor" },
+    { label: "TypeScript Editor", href: "/typescript-editor" },
+    { label: "Python Compiler", href: "/python-compiler" },
+    { label: "C Compiler", href: "/c-compiler" },
+    { label: "C++ Compiler", href: "/cpp-compiler" },
+    { label: "Java Compiler", href: "/java-compiler" },
+    { label: "Go Compiler", href: "/go-compiler" },
+    { label: "Rust Compiler", href: "/rust-compiler" },
+    { label: "Ruby Compiler", href: "/ruby-compiler" },
+    { label: "Haskell Compiler", href: "/haskell-compiler" },
+    { label: "HTML Editor", href: "/html-editor" },
+    { label: "CSS Editor", href: "/css-editor" },
+  ];
 
   return (
     <>
@@ -40,7 +54,8 @@ export default function Footer() {
             <Logo iconSize={isMobile ? 50 : 75} textSize={isMobile ? 40 : 60} />
           </Link>
 
-          {/* Language pills */}
+          {/* Language links — SEO internal links to all 12 compiler pages */}
+          <nav aria-label="Language compiler pages">
           <div
             style={{
               display: "flex",
@@ -51,9 +66,10 @@ export default function Footer() {
               marginTop: isMobile ? "20px" : "28px",
             }}
           >
-            {languages.map((lang) => (
-              <span
-                key={lang}
+            {languageLinks.map((lang) => (
+              <Link
+                key={lang.href}
+                href={lang.href}
                 className="font-mono"
                 style={{
                   fontSize: "11px",
@@ -62,15 +78,17 @@ export default function Footer() {
                   borderRadius: "20px",
                   border: `1px solid ${theme.border}`,
                   color: theme.faint,
+                  textDecoration: "none",
                   transition: "all 0.2s ease",
                 }}
                 onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.accent; e.currentTarget.style.color = theme.accent; }}
                 onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.color = theme.faint; }}
               >
-                {lang}
-              </span>
+                {lang.label}
+              </Link>
             ))}
           </div>
+          </nav>
         </div>
 
         {/* Bottom section */}

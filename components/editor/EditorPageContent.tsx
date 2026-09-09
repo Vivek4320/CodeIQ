@@ -100,21 +100,9 @@ function EditorPage({ initialLanguage }: { initialLanguage?: string } = {}) {
   const isWebLanguage = language === "html" || language === "css";
   const [webTab, setWebTab] = useState<"html" | "css">("html");
 
-  // Auto-save state
   const [currentProjectId, setCurrentProjectId] = useState<number | null>(
     projectId ? Number(projectId) : null
   );
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
-  const codeRef = useRef(code);
-  const projectNameRef = useRef(projectName);
-  const htmlCodeRef = useRef(htmlCode);
-  const cssCodeRef = useRef(cssCode);
-
-  // Keep refs in sync with state
-  useEffect(() => { codeRef.current = code; }, [code]);
-  useEffect(() => { projectNameRef.current = projectName; }, [projectName]);
-  useEffect(() => { htmlCodeRef.current = htmlCode; }, [htmlCode]);
-  useEffect(() => { cssCodeRef.current = cssCode; }, [cssCode]);
 
   // Protect applied code from being reset
   useEffect(() => {
@@ -175,7 +163,6 @@ function EditorPage({ initialLanguage }: { initialLanguage?: string } = {}) {
           setLanguage(project.language);
           setProjectName(project.name.replace(/\.[^.]+$/, ""));
           setCurrentProjectId(project.id);
-          setSaveStatus("saved");
 
           // For HTML/CSS, parse JSON code with clear structure
           if (project.language === "html" || project.language === "css") {
@@ -260,50 +247,6 @@ function EditorPage({ initialLanguage }: { initialLanguage?: string } = {}) {
     setOutput([]);
   }, [code]);
 
-  // Auto-save with 3-second debounce
-  useEffect(() => {
-    if (!user) return;
-
-    const timer = setTimeout(async () => {
-      const currentCode = codeRef.current;
-      const currentHtml = htmlCodeRef.current;
-      const currentCss = cssCodeRef.current;
-      const currentName = projectNameRef.current;
-      const name = isWebLanguage ? currentName : `${currentName}.${FILE_NAMES[language]?.split(".")[1] || "txt"}`;
-
-      setSaveStatus("saving");
-      try {
-        if (currentProjectId) {
-          const res = await fetch("/api/projects", {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email: user.email, projectId: currentProjectId, name, language, code: currentCode, htmlCode: currentHtml, cssCode: currentCss }),
-          });
-          if (res.ok) setSaveStatus("saved");
-          else setSaveStatus("idle");
-        } else {
-          const res = await fetch("/api/projects", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email: user.email, name, language, code: currentCode, htmlCode: currentHtml, cssCode: currentCss }),
-          });
-          const data = await res.json();
-          if (res.ok && data.project) {
-            setCurrentProjectId(data.project.id);
-            setSaveStatus("saved");
-            window.history.replaceState(null, "", `/editor?id=${data.project.id}`);
-          } else {
-            setSaveStatus("idle");
-          }
-        }
-      } catch {
-        setSaveStatus("idle");
-      }
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }, [code, projectName, language, user, currentProjectId, htmlCode, cssCode]);
-
   // Drag handler
   const handleDragStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -340,7 +283,6 @@ function EditorPage({ initialLanguage }: { initialLanguage?: string } = {}) {
     setShowTerminal(false);
     setProjectName("untitled");
     setCurrentProjectId(null);
-    setSaveStatus("idle");
   }, [htmlCode, cssCode]);
 
   const detectInputPrompts = useCallback((lang: string, code: string): { prompt: string; index: number }[] => {
@@ -520,7 +462,6 @@ function EditorPage({ initialLanguage }: { initialLanguage?: string } = {}) {
           setCurrentProjectId(data.project.id);
           window.history.replaceState(null, "", `/editor?id=${data.project.id}`);
         }
-        setSaveStatus("saved");
         toast("Project saved successfully!", "success");
       } else {
         toast(data.error || "Failed to save", "error");
@@ -591,11 +532,6 @@ function EditorPage({ initialLanguage }: { initialLanguage?: string } = {}) {
               {isWebLanguage ? "" : `· ${FILE_NAMES[language] || "main.txt"}`}
             </span>
           )}
-          {saveStatus && saveStatus !== "idle" && (
-            <span className="font-mono" style={{ fontSize: "10px", color: saveStatus === "saving" ? "#FBBF24" : "#34D399", flexShrink: 0 }}>
-              {saveStatus === "saving" ? "●" : "○"}
-            </span>
-          )}
         </div>
 
         {/* Right: Actions */}
@@ -664,7 +600,7 @@ function EditorPage({ initialLanguage }: { initialLanguage?: string } = {}) {
         {isWebLanguage ? (
           /* HTML/CSS: Side-by-side on desktop, tabbed on mobile */
           <div style={{ width: "100%", display: "flex", flexDirection: "column", border: `1px solid ${theme.border}`, borderRadius: "8px", overflow: "hidden", minHeight: isMobile ? "auto" : "400px", flex: isMobile ? "none" : 1 }}>
-            <EditorToolbar language={language} onLanguageChange={handleLanguageChange} onRun={handleRun} onSave={handleSave} isRunning={isRunning} saveStatus={saveStatus} onTemplates={() => setShowTemplates(true)} />
+            <EditorToolbar language={language} onLanguageChange={handleLanguageChange} onRun={handleRun} onSave={handleSave} isRunning={isRunning} onTemplates={() => setShowTemplates(true)} />
             {isMobile ? (
               /* Mobile: tabbed layout */
               <>
@@ -716,7 +652,7 @@ function EditorPage({ initialLanguage }: { initialLanguage?: string } = {}) {
           /* Other languages: Editor + Output split */
           <>
             <div style={{ width: isMobile ? "100%" : `${splitPos}%`, flex: isMobile ? 1 : "none", display: "flex", flexDirection: "column", border: `1px solid ${theme.border}`, borderRadius: "8px", overflow: "hidden", height: isMobile ? "auto" : "100%" }}>
-              <EditorToolbar language={language} onLanguageChange={handleLanguageChange} onRun={handleRun} onSave={handleSave} isRunning={isRunning} saveStatus={saveStatus} onTemplates={() => setShowTemplates(true)} />
+              <EditorToolbar language={language} onLanguageChange={handleLanguageChange} onRun={handleRun} onSave={handleSave} isRunning={isRunning} onTemplates={() => setShowTemplates(true)} />
               <div style={{ flex: 1, minHeight: 0 }}>
                 <CodeEditor language={language} value={code} onChange={handleCodeChange} />
               </div>

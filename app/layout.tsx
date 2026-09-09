@@ -20,11 +20,38 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CodeIQ — Free Online Code Compiler & Editor | 12+ Languages",
-  description: "Write, compile & run code online instantly. Free browser-based IDE with AI assistance for Python, JavaScript, Java, C++ & more. No signup needed.",
-  keywords: ["online compiler", "online code editor", "run code online", "browser IDE", "free compiler"],
+  title: "CodeIQ — Online Code Compiler & Editor | 12 Languages",
+  description:
+    "Write, compile and run code online with CodeIQ. Free browser-based IDE supporting Python, JavaScript, TypeScript, Java, C, C++, Go, Rust, Ruby, Haskell, HTML and CSS. No signup needed.",
+  keywords: [
+    "online compiler",
+    "online code editor",
+    "run code online",
+    "browser IDE",
+    "free online compiler",
+    "online code compiler",
+    "multi-language compiler",
+    "python compiler",
+    "javascript editor",
+    "java compiler",
+    "c++ compiler",
+  ],
   alternates: {
-    canonical: "https://yourdomain.com",
+    canonical: "https://code-iq-ai.vercel.app",
+  },
+  openGraph: {
+    title: "CodeIQ — Online Code Compiler & Editor | 12 Languages",
+    description:
+      "Write and run code online for Python, JavaScript, Java, C++, Go, Rust, Ruby and more. Free browser-based compiler — no signup needed.",
+    url: "https://code-iq-ai.vercel.app",
+    siteName: "CodeIQ",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "CodeIQ — Online Code Compiler & Editor",
+    description:
+      "Run Python, JavaScript, Java, C++, Go, Rust and 6 more languages directly in your browser. Free online compiler.",
   },
   verification: {
     google: "iYCIJ-Qy5f6rKexF-iMawziYVw0-7wHPzef7mP5RxlQ",
@@ -57,20 +84,30 @@ export default function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "SoftwareApplication",
-              name: "CodeIQ",
-              url: "https://code-iq-ai.vercel.app",
-              description: "A modern, browser-based code editor with AI assistance, live execution, and 12+ language support.",
-              applicationCategory: "DeveloperApplication",
-              operatingSystem: "Web",
-              offers: {
-                "@type": "Offer",
-                price: "0",
-                priceCurrency: "USD",
+            __html: JSON.stringify([
+              {
+                "@context": "https://schema.org",
+                "@type": "SoftwareApplication",
+                name: "CodeIQ",
+                url: "https://code-iq-ai.vercel.app",
+                description:
+                  "A free, browser-based online code compiler and editor supporting Python, JavaScript, TypeScript, Java, C, C++, Go, Rust, Ruby, Haskell, HTML and CSS.",
+                applicationCategory: "DeveloperApplication",
+                operatingSystem: "Web",
+                offers: {
+                  "@type": "Offer",
+                  price: "0",
+                  priceCurrency: "USD",
+                },
               },
-            }),
+              {
+                "@context": "https://schema.org",
+                "@type": "Organization",
+                name: "CodeIQ",
+                url: "https://code-iq-ai.vercel.app",
+                description: "CodeIQ provides a free multi-language online code compiler and editor.",
+              },
+            ]),
           }}
         />
       </head>

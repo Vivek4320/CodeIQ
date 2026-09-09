@@ -57,7 +57,7 @@ CodeIQ is a full-featured online code editor that lets you write, execute, and s
 | 5 | **Smart Input** | Auto-detects `input()` calls and shows inline input fields |
 | 6 | **Live Preview** | HTML/CSS editor with instant browser preview |
 | 7 | **7 Themes** | Midnight, Cyberpunk, Retro Gaming, Neon Nights, Deep Ocean, Hacker, Light Mode |
-| 8 | **Auto-Save** | Projects saved automatically to Supabase database |
+| 8 | **Project Saving** | Save projects to the Supabase database when you choose |
 | 9 | **Shareable Links** | Generate shareable URLs for any code snippet |
 | 10 | **Admin Panel** | Full dashboard with user management, language config, and analytics |
 | 11 | **Mobile Nav** | Bottom navigation bar (Instagram/WhatsApp style) on mobile |

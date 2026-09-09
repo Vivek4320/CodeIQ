@@ -17,7 +17,7 @@ const SECTIONS = [
       heading: "Getting Started with CodeIQ",
       paragraphs: [
         "CodeIQ is a browser-based code editor that lets you write, run, and share code in 12 languages — no setup required.",
-        "Simply open the editor, pick your language, and start coding. Your code is auto-saved as you type, and you can run it instantly.",
+        "Simply open the editor, pick your language, and start coding. Save your project when you are ready, or run it instantly.",
       ],
       code: `// Welcome to CodeIQ!
 // Pick a language and start coding
@@ -41,7 +41,7 @@ console.log(greet("World"));`,
       ],
       steps: [
         { step: "1", text: "Open the editor and select your programming language" },
-        { step: "2", text: "Write your code — it auto-saves as you type" },
+        { step: "2", text: "Write your code and save your project when ready" },
         { step: "3", text: "Click the Run button to see your output instantly" },
       ],
     },

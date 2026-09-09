@@ -32,8 +32,8 @@ def clean_palindrome(s):
   {
     icon: GitBranch,
     tag: "03 — History",
-    title: "Every run, saved automatically",
-    desc: "No manual commits. Every execution is versioned, so you can roll back to any point without thinking twice.",
+    title: "Every run, recorded",
+    desc: "Each execution is added to your history, so you can review previous results from the editor.",
     code: `v4  2 min ago    fixed edge case
 v3  8 min ago    added merge()
 v2  14 min ago   base recursion

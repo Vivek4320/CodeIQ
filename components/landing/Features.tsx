@@ -16,8 +16,8 @@ const FEATURES = [
   },
   {
     icon: GitBranch,
-    title: "Auto-saved history",
-    desc: "Every run is versioned automatically. Roll back to any point without thinking about it.",
+    title: "Run history",
+    desc: "Review previous executions from the editor while keeping project saves under your control.",
   },
   {
     icon: Share2,
