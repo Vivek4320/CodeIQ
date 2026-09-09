@@ -39,6 +39,48 @@ function logJudge0Config(): void {
   });
 }
 
+function judge0ServiceResponse(
+  message: string,
+  status: string,
+  httpStatus = 503,
+): NextResponse {
+  return NextResponse.json(
+    { output: [], error: message, status },
+    { status: httpStatus },
+  );
+}
+
+function judge0HttpError(statusCode: number): { error: string; status: string } {
+  if (statusCode === 401 || statusCode === 403) {
+    return {
+      error: "Judge0 authentication failed. Check the server-side API key configuration.",
+      status: "Authentication Error",
+    };
+  }
+  if (statusCode === 404) {
+    return {
+      error: "Judge0 endpoint was not found. Check JUDGE0_API_URL.",
+      status: "Invalid Endpoint",
+    };
+  }
+  if (statusCode === 429) {
+    return {
+      error: "Judge0 rate limit exceeded. Please try again later.",
+      status: "Rate Limited",
+    };
+  }
+  if (statusCode >= 500) {
+    return {
+      error: "Judge0 is temporarily unavailable.",
+      status: "Judge0 Service Error",
+    };
+  }
+  return {
+    error: "Judge0 rejected the execution request.",
+    status: "Judge0 Request Error",
+  };
+}
+
 async function readJudge0Response(response: Response): Promise<{
   error?: unknown;
   status?: unknown;
@@ -175,9 +217,9 @@ export async function POST(req: Request) {
 
     if (judgeResult) return judgeResult;
     if (JUDGE0_LANGUAGES[language] && !isValidJudge0Url(JUDGE0_API_URL)) {
-      return NextResponse.json(
-        { output: [], error: "Code execution service is temporarily unavailable." },
-        { status: 503 }
+      return judge0ServiceResponse(
+        "Code execution service is temporarily unavailable.",
+        "Service Unavailable",
       );
     }
     return NextResponse.json(
@@ -366,6 +408,7 @@ async function executeViaJudge0(
   }
 
   try {
+    console.info("[Judge0] request started", { language: lang, languageId });
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
@@ -395,12 +438,13 @@ async function executeViaJudge0(
 
     if (!submitRes.ok) {
       const details = await readJudge0Response(submitRes);
+      const httpError = judge0HttpError(submitRes.status);
       console.error("[Judge0] submission response", {
         httpStatus: submitRes.status,
         error: details.error ?? null,
         status: details.status ?? null,
       });
-      return null;
+      return judge0ServiceResponse(httpError.error, httpError.status);
     }
 
     const submission = await readJudge0Response(submitRes);
@@ -415,6 +459,7 @@ async function executeViaJudge0(
       return NextResponse.json({
         output: [],
         error: "Judge0 did not return a submission token.",
+        status: "Judge0 Request Error",
       });
     }
 
@@ -444,13 +489,17 @@ async function executeViaJudge0(
           error: details.error ?? null,
           status: details.status ?? null,
         });
-        continue;
+        const httpError = judge0HttpError(resultRes.status);
+        return judge0ServiceResponse(httpError.error, httpError.status);
       }
 
       const result = await resultRes.json();
       console.info("[Judge0] execution status", {
         httpStatus: resultRes.status,
         status: result.status?.description || null,
+        stdoutLength: typeof result.stdout === "string" ? result.stdout.length : 0,
+        compileOutputLength: typeof result.compile_output === "string" ? result.compile_output.length : 0,
+        stderrLength: typeof result.stderr === "string" ? result.stderr.length : 0,
       });
 
       // Status 1 = In Queue
@@ -481,19 +530,24 @@ async function executeViaJudge0(
     return NextResponse.json({
       output: ["⏱️ Execution timed out while waiting for Judge0."],
       error: "Execution Timeout",
+      status: "Execution Timeout",
     });
 
   } catch (error) {
     console.error("[Judge0] request error", {
       error: error instanceof Error ? error.message : "unknown-error",
     });
-    return null;
+    return judge0ServiceResponse(
+      "Code execution service is temporarily unavailable.",
+      "Service Unavailable",
+    );
   }
 }
 
 function judge0OutputLines(value: unknown): string[] {
   if (typeof value !== "string" || value.length === 0) return [];
-  return value.replace(/\r\n?/g, "\n").split("\n");
+  const normalized = value.replace(/\r\n?/g, "\n").replace(/\n+$/, "");
+  return normalized ? normalized.split("\n") : [];
 }
 
 // Local execution for Python, C, C++
