@@ -71,9 +71,9 @@ export default function CompilerLanding({ lang }: { lang: CompilerLanguage }) {
       });
       const data = await res.json();
       if (data.error) {
-        setOutput([data.error]);
+        setOutput([data.error, ...(data.output || [])]);
       } else if (data.output && data.output.length > 0) {
-        setOutput(data.output.filter((l: string) => l.trim() !== ""));
+        setOutput(data.output);
       } else {
         setOutput(["(no output)"]);
       }

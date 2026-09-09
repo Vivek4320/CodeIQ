@@ -403,10 +403,9 @@ function EditorPage({ initialLanguage }: { initialLanguage?: string } = {}) {
       });
       const data = await res.json();
       if (data.error) {
-        setOutput([data.error]);
+        setOutput([data.error, ...(data.output || [])]);
       } else if (data.output && data.output.length > 0) {
-        const clean = data.output.filter((l: string) => l.trim() !== "" && l !== "(no output)");
-        setOutput(clean);
+        setOutput(data.output);
       } else {
         setOutput(["(no output)"]);
       }
@@ -732,8 +731,8 @@ function EditorPage({ initialLanguage }: { initialLanguage?: string } = {}) {
                             body: JSON.stringify({ language, code, stdinInput: stdin, inputPrompts: prompts }),
                           });
                           const data = await res.json();
-                          if (data.error) setOutput([data.error]);
-                          else if (data.output) setOutput(data.output.filter((l: string) => l.trim() !== "" && l !== "(no output)"));
+                          if (data.error) setOutput([data.error, ...(data.output || [])]);
+                          else if (data.output) setOutput(data.output);
                           else setOutput(["(no output)"]);
                         } catch (e: any) {
                           setOutput(["Error: " + e.message]);
@@ -765,8 +764,8 @@ function EditorPage({ initialLanguage }: { initialLanguage?: string } = {}) {
                         })
                           .then((r) => r.json())
                           .then((data) => {
-                            if (data.error) setOutput([data.error]);
-                            else if (data.output) setOutput(data.output.filter((l: string) => l.trim() !== "" && l !== "(no output)"));
+                            if (data.error) setOutput([data.error, ...(data.output || [])]);
+                            else if (data.output) setOutput(data.output);
                             else setOutput(["(no output)"]);
                           })
                           .catch((e) => setOutput(["Error: " + e.message]))
@@ -815,8 +814,8 @@ function EditorPage({ initialLanguage }: { initialLanguage?: string } = {}) {
                             })
                               .then((r) => r.json())
                               .then((data) => {
-                                if (data.error) setOutput([data.error]);
-                                else if (data.output) setOutput(data.output.filter((l: string) => l.trim() !== "" && l !== "(no output)"));
+                                if (data.error) setOutput([data.error, ...(data.output || [])]);
+                                else if (data.output) setOutput(data.output);
                                 else setOutput(["(no output)"]);
                               })
                               .catch((e) => setOutput(["Error: " + e.message]))

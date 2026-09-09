@@ -7,10 +7,20 @@ import { query } from "@/lib/db";
 
 const IS_WIN = process.platform === "win32";
 const TMP_DIR = IS_WIN ? (process.env.TEMP || "C:/Temp") : "/tmp";
-const JUDGE0_API_URL = process.env.JUDGE0_API_URL || "";
+const IS_VERCEL = process.env.VERCEL === "1" || process.env.VERCEL === "true";
+const JUDGE0_API_URL = (process.env.JUDGE0_API_URL || "").trim().replace(/\/+$/, "");
 const JUDGE0_API_KEY = process.env.JUDGE0_API_KEY || "";
 const MAX_CODE_LENGTH = 50000;
-console.log("Executing code using Judge0:", process.env.JUDGE0_API_URL);
+
+function isValidJudge0Url(value: string): boolean {
+  if (!value || value.includes("your-server-ip")) return false;
+  try {
+    const url = new URL(value);
+    return (url.protocol === "http:" || url.protocol === "https:") && Boolean(url.hostname);
+  } catch {
+    return false;
+  }
+}
 
 // ─── Rate Limiter (in-memory, per-IP) ───
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -115,31 +125,17 @@ export async function POST(req: Request) {
       }
     }
 
-    // If stdin input provided, inject into code for Python/others
-    if (stdinInput !== undefined && stdinInput.trim()) {
-      const injectedCode = injectStdin(language, code, stdinInput, inputPrompts);
-      if (injectedCode) {
-        // Run with injected input
-        const result = tryLocalExec(language, injectedCode);
-        if (result) return result;
-        const judgeResult = await executeViaJudge0(
-          language,
-          injectedCode,
-          stdinInput
-        );
-
-        if (judgeResult) return judgeResult;
-        const sim = SIMULATORS[language];
-        if (sim) {
-          const output = sim(injectedCode);
-          return NextResponse.json({ output, error: null });
-        }
-      }
+    // Local execution is available only in supported non-Vercel environments.
+    // Judge0 always receives the original source and stdin separately.
+    if (!IS_VERCEL && stdinInput !== undefined && stdinInput.trim()) {
+      const localResult = await executeWithStdin(language, code, stdinInput, inputPrompts);
+      if (localResult) return localResult;
     }
 
-    // Try local compiler first (works in dev + Docker with compilers installed)
-    const result = tryLocalExec(language, code);
-    if (result) return result;
+    if (!IS_VERCEL) {
+      const result = tryLocalExec(language, code);
+      if (result) return result;
+    }
    
     const judgeResult = await executeViaJudge0(
       language,
@@ -148,13 +144,16 @@ export async function POST(req: Request) {
     );
 
     if (judgeResult) return judgeResult;
-    // Last resort: simulator (fake output with warning)
-    const sim = SIMULATORS[language];
-    if (sim) {
-      const output = sim(code);
-      return NextResponse.json({ output, error: null });
+    if (JUDGE0_LANGUAGES[language] && !isValidJudge0Url(JUDGE0_API_URL)) {
+      return NextResponse.json(
+        { output: [], error: "Code execution service is temporarily unavailable." },
+        { status: 503 }
+      );
     }
-    return NextResponse.json({ error: `Language "${language}" is not supported. Supported: JavaScript, TypeScript, Python, C, C++, Java, Go, Rust, Ruby, Haskell` }, { status: 400 });
+    return NextResponse.json(
+      { output: [], error: `Language "${language}" is not supported. Supported: JavaScript, TypeScript, Python, C, C++, Java, Go, Rust, Ruby, Haskell` },
+      { status: 400 }
+    );
   } catch (error: any) {
     return NextResponse.json({ error: error.message, output: [] }, { status: 500 });
   }
@@ -326,7 +325,7 @@ async function executeViaJudge0(
 ): Promise<NextResponse | null> {
   const languageId = JUDGE0_LANGUAGES[lang];
 
-  if (!languageId || !JUDGE0_API_URL) {
+  if (!languageId || !isValidJudge0Url(JUDGE0_API_URL)) {
     return null;
   }
 
@@ -394,59 +393,22 @@ async function executeViaJudge0(
         continue;
       }
 
-      const output: string[] = [];
-
-      if (result.compile_output) {
-        output.push(
-          ...result.compile_output
-            .replace(/\r/g, "")
-            .split("\n")
-            .filter(Boolean)
-        );
-      }
-
-      if (result.stdout) {
-        output.push(
-          ...result.stdout
-            .replace(/\r/g, "")
-            .trimEnd()
-            .split("\n")
-        );
-      }
-
-      if (result.stderr) {
-        output.push(
-          ...result.stderr
-            .replace(/\r/g, "")
-            .split("\n")
-            .filter(Boolean)
-        );
-      }
-
-      if (output.length === 0) {
-        output.push("(no output)");
-      }
-
       const statusId = result.status?.id;
-
-      let error: string | null = null;
-
-      if (statusId === 6) {
-        error = "Compilation Error";
-      } else if (statusId === 5) {
-        error = "Time Limit Exceeded";
-      } else if (statusId >= 7) {
-        error = "Runtime Error";
-      }
-
-      output.push(
-        "",
-        result.status?.description || "Execution finished"
-      );
+      const status = result.status?.description || "Execution finished";
+      const stdout = judge0OutputLines(result.stdout);
+      const diagnostics = [
+        ...judge0OutputLines(result.compile_output),
+        ...judge0OutputLines(result.stderr),
+      ];
+      const accepted = statusId === 3;
+      const output = accepted
+        ? (stdout.length > 0 ? stdout : ["(no output)"])
+        : (diagnostics.length > 0 ? diagnostics : ["(no output)"]);
 
       return NextResponse.json({
         output,
-        error,
+        error: accepted ? null : status,
+        status,
       });
     }
 
@@ -459,6 +421,11 @@ async function executeViaJudge0(
     console.error("Judge0 error:", error);
     return null;
   }
+}
+
+function judge0OutputLines(value: unknown): string[] {
+  if (typeof value !== "string" || value.length === 0) return [];
+  return value.replace(/\r\n?/g, "\n").split("\n");
 }
 
 // Local execution for Python, C, C++
