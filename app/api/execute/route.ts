@@ -16,6 +16,10 @@ const JUDGE0_API_URL = (process.env.JUDGE0_API_URL || "").trim().replace(/\/+$/,
 const JUDGE0_API_KEY = process.env.JUDGE0_API_KEY || "";
 const MAX_CODE_LENGTH = 50000;
 
+function executionRequestId(): string {
+  return Math.random().toString(36).slice(2, 10);
+}
+
 function isValidJudge0Url(value: string): boolean {
   if (!value || value.includes("your-server-ip")) return false;
   try {
@@ -47,7 +51,15 @@ function judge0ServiceResponse(
   message: string,
   status: string,
   httpStatus = 503,
+  requestId?: string,
 ): NextResponse {
+  console.error("[JUDGE0 DEBUG] final API response", {
+    requestId: requestId ?? null,
+    httpStatus,
+    status,
+    error: message,
+    outputLength: 0,
+  });
   return NextResponse.json(
     { output: [], error: message, status },
     { status: httpStatus },
@@ -158,6 +170,7 @@ if (IS_WIN) {
 
 // POST handler
 export async function POST(req: Request) {
+  const requestId = executionRequestId();
   try {
     const { language, code, stdinInput, inputPrompts } = await req.json();
     if (!code || !language) {
@@ -216,14 +229,24 @@ export async function POST(req: Request) {
     const judgeResult = await executeViaJudge0(
       language,
       code,
-      stdinInput
+      stdinInput,
+      requestId,
     );
 
     if (judgeResult) return judgeResult;
     if (JUDGE0_LANGUAGES[language] && !isValidJudge0Url(JUDGE0_API_URL)) {
+      console.error("[JUDGE0 DEBUG] service unavailable path", {
+        requestId,
+        reason: "invalid-or-missing-url",
+        urlConfigured: Boolean(JUDGE0_API_URL),
+        urlValid: isValidJudge0Url(JUDGE0_API_URL),
+        language,
+      });
       return judge0ServiceResponse(
         "Code execution service is temporarily unavailable.",
         "Service Unavailable",
+        503,
+        requestId,
       );
     }
     return NextResponse.json(
@@ -398,13 +421,15 @@ const JUDGE0_LANGUAGES: Record<string, number> = {
 async function executeViaJudge0(
   lang: string,
   code: string,
-  stdinInput?: string
+  stdinInput?: string,
+  requestId?: string,
 ): Promise<NextResponse | null> {
   const languageId = JUDGE0_LANGUAGES[lang];
   logJudge0Config();
 
   if (!languageId || !isValidJudge0Url(JUDGE0_API_URL)) {
     console.warn("[Judge0] request skipped", {
+      requestId: requestId ?? null,
       language: lang,
       languageId: languageId || null,
       reason: !languageId ? "unsupported-language" : "invalid-or-missing-url",
@@ -413,7 +438,7 @@ async function executeViaJudge0(
   }
 
   try {
-    console.info("[Judge0] request started", { language: lang, languageId });
+    console.info("[Judge0] request started", { requestId: requestId ?? null, language: lang, languageId });
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
@@ -445,11 +470,12 @@ async function executeViaJudge0(
       const details = await readJudge0Response(submitRes);
       const httpError = judge0HttpError(submitRes.status);
       console.error("[Judge0] submission response", {
+        requestId: requestId ?? null,
         httpStatus: submitRes.status,
         error: details.error ?? null,
         status: details.status ?? null,
       });
-      return judge0ServiceResponse(httpError.error, httpError.status);
+      return judge0ServiceResponse(httpError.error, httpError.status, 503, requestId);
     }
 
     const submission = await readJudge0Response(submitRes);
@@ -457,6 +483,7 @@ async function executeViaJudge0(
 
     if (!token) {
       console.error("[Judge0] submission response missing token", {
+        requestId: requestId ?? null,
         httpStatus: submitRes.status,
         error: submission.error ?? null,
         status: submission.status ?? null,
@@ -484,22 +511,25 @@ async function executeViaJudge0(
       );
 
       console.info("[Judge0] polling response", {
+        requestId: requestId ?? null,
         httpStatus: resultRes.status,
       });
 
       if (!resultRes.ok) {
         const details = await readJudge0Response(resultRes);
         console.error("[Judge0] polling response", {
+          requestId: requestId ?? null,
           httpStatus: resultRes.status,
           error: details.error ?? null,
           status: details.status ?? null,
         });
         const httpError = judge0HttpError(resultRes.status);
-        return judge0ServiceResponse(httpError.error, httpError.status);
+        return judge0ServiceResponse(httpError.error, httpError.status, 503, requestId);
       }
 
       const result = await resultRes.json();
       console.info("[Judge0] execution status", {
+        requestId: requestId ?? null,
         httpStatus: resultRes.status,
         status: result.status?.description || null,
         stdoutLength: typeof result.stdout === "string" ? result.stdout.length : 0,
@@ -526,6 +556,7 @@ async function executeViaJudge0(
         : (diagnostics.length > 0 ? diagnostics : ["(no output)"]);
 
       console.info("[Execute] final response", {
+        requestId: requestId ?? null,
         status,
         accepted,
         outputLength: output.length,
@@ -555,6 +586,7 @@ async function executeViaJudge0(
     );
     if (isAbort || isTimeout) {
       console.warn("[Judge0] request timed out", {
+        requestId: requestId ?? null,
         error: error instanceof Error ? error.message : "timeout",
       });
       return NextResponse.json({
@@ -564,12 +596,15 @@ async function executeViaJudge0(
       });
     }
     console.error("[Judge0] request error", {
+      requestId: requestId ?? null,
       error: error instanceof Error ? error.message : "unknown-error",
       name: error instanceof Error ? error.name : "unknown",
     });
     return judge0ServiceResponse(
       "Code execution service is temporarily unavailable.",
       "Service Unavailable",
+      503,
+      requestId,
     );
   }
 }
