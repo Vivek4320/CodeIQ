@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Instrument_Serif, Inter } from "next/font/google";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import LanguageCompilerCard from "@/components/LanguageCompilerCard";
 import { compilerLanguages } from "@/lib/compilerLanguages";
 
 const BASE_URL = "https://code-iq-ai.vercel.app";
@@ -223,51 +224,12 @@ export default function OnlineCodeCompilerPage() {
               }}
             >
               {compilerLanguages.map((lang) => (
-                <Link
+                <LanguageCompilerCard
                   key={lang.slug}
-                  href={`/${lang.slug}`}
-                  className="font-body"
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "4px",
-                    padding: "16px 20px",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    borderRadius: "10px",
-                    textDecoration: "none",
-                    transition: "all 0.2s ease",
-                    background: "rgba(255,255,255,0.02)",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = "rgba(124,107,250,0.5)";
-                    e.currentTarget.style.background = "rgba(124,107,250,0.06)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor =
-                      "rgba(255,255,255,0.08)";
-                    e.currentTarget.style.background = "rgba(255,255,255,0.02)";
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: "16px",
-                      fontWeight: 600,
-                      color: "inherit",
-                      opacity: 0.9,
-                    }}
-                  >
-                    {lang.h1}
-                  </span>
-                  <span
-                    style={{
-                      fontFamily: "var(--font-geist-mono, monospace)",
-                      fontSize: "11px",
-                      opacity: 0.45,
-                    }}
-                  >
-                    {lang.version}
-                  </span>
-                </Link>
+                  slug={lang.slug}
+                  h1={lang.h1}
+                  version={lang.version}
+                />
               ))}
             </div>
           </section>
