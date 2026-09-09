@@ -22,6 +22,36 @@ function isValidJudge0Url(value: string): boolean {
   }
 }
 
+function judge0Hostname(value: string): string | null {
+  try {
+    return new URL(value).hostname || null;
+  } catch {
+    return null;
+  }
+}
+
+function logJudge0Config(): void {
+  console.info("[Judge0] configuration", {
+    urlConfigured: Boolean(JUDGE0_API_URL),
+    hostname: judge0Hostname(JUDGE0_API_URL),
+    apiKeyConfigured: Boolean(JUDGE0_API_KEY),
+    urlValid: isValidJudge0Url(JUDGE0_API_URL),
+  });
+}
+
+async function readJudge0Response(response: Response): Promise<{
+  error?: unknown;
+  status?: unknown;
+  token?: unknown;
+}> {
+  try {
+    const body = await response.json() as Record<string, unknown>;
+    return { error: body.error, status: body.status, token: body.token };
+  } catch {
+    return {};
+  }
+}
+
 // ─── Rate Limiter (in-memory, per-IP) ───
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT = 50;
@@ -324,8 +354,14 @@ async function executeViaJudge0(
   stdinInput?: string
 ): Promise<NextResponse | null> {
   const languageId = JUDGE0_LANGUAGES[lang];
+  logJudge0Config();
 
   if (!languageId || !isValidJudge0Url(JUDGE0_API_URL)) {
+    console.warn("[Judge0] request skipped", {
+      language: lang,
+      languageId: languageId || null,
+      reason: !languageId ? "unsupported-language" : "invalid-or-missing-url",
+    });
     return null;
   }
 
@@ -344,6 +380,7 @@ async function executeViaJudge0(
       {
         method: "POST",
         headers,
+        signal: AbortSignal.timeout(10000),
         body: JSON.stringify({
           language_id: languageId,
           source_code: code,
@@ -352,15 +389,29 @@ async function executeViaJudge0(
       }
     );
 
+    console.info("[Judge0] submission response", {
+      httpStatus: submitRes.status,
+    });
+
     if (!submitRes.ok) {
-      console.error("Judge0 submission failed:", await submitRes.text());
+      const details = await readJudge0Response(submitRes);
+      console.error("[Judge0] submission response", {
+        httpStatus: submitRes.status,
+        error: details.error ?? null,
+        status: details.status ?? null,
+      });
       return null;
     }
 
-    const submission = await submitRes.json();
+    const submission = await readJudge0Response(submitRes);
     const token = submission.token;
 
     if (!token) {
+      console.error("[Judge0] submission response missing token", {
+        httpStatus: submitRes.status,
+        error: submission.error ?? null,
+        status: submission.status ?? null,
+      });
       return NextResponse.json({
         output: [],
         error: "Judge0 did not return a submission token.",
@@ -378,14 +429,29 @@ async function executeViaJudge0(
         {
           method: "GET",
           headers,
+          signal: AbortSignal.timeout(10000),
         }
       );
 
+      console.info("[Judge0] polling response", {
+        httpStatus: resultRes.status,
+      });
+
       if (!resultRes.ok) {
+        const details = await readJudge0Response(resultRes);
+        console.error("[Judge0] polling response", {
+          httpStatus: resultRes.status,
+          error: details.error ?? null,
+          status: details.status ?? null,
+        });
         continue;
       }
 
       const result = await resultRes.json();
+      console.info("[Judge0] execution status", {
+        httpStatus: resultRes.status,
+        status: result.status?.description || null,
+      });
 
       // Status 1 = In Queue
       // Status 2 = Processing
@@ -418,7 +484,9 @@ async function executeViaJudge0(
     });
 
   } catch (error) {
-    console.error("Judge0 error:", error);
+    console.error("[Judge0] request error", {
+      error: error instanceof Error ? error.message : "unknown-error",
+    });
     return null;
   }
 }
