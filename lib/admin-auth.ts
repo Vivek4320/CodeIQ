@@ -1,6 +1,6 @@
 import { query } from "./db";
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "vivekpankhaniya43@gmail.com";
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "";
 
 export async function isAdmin(email: string): Promise<boolean> {
   if (email === ADMIN_EMAIL) return true;

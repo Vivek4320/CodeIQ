@@ -1,11 +1,21 @@
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
-import { isAdmin } from "@/lib/admin-auth";
+import { requireAdmin } from "@/lib/admin-session";
+import { compilerLanguages } from "@/lib/compilerLanguages";
 
-export async function GET() {
+const languageIds: Record<string, number | null> = { c: 50, cpp: 54, java: 62, javascript: 63, python: 71, go: 60, ruby: 72, rust: 73, typescript: 74, haskell: 85, html: null, css: null };
+
+export async function GET(req: Request) {
   try {
-    const rows = await query("SELECT * FROM languages ORDER BY sort_order ASC");
-    return NextResponse.json({ languages: rows });
+    if (!await requireAdmin(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    const rows = await query("SELECT language, COUNT(*) AS execution_count, COUNT(*) FILTER (WHERE output IS NULL OR (output NOT ILIKE '%error%' AND output NOT ILIKE '%failed%' AND output NOT ILIKE '%exception%' AND output NOT ILIKE '%compilation%')) AS successful_count FROM run_history GROUP BY language");
+    const usage = new Map(rows.map((row: any) => [row.language, row]));
+    return NextResponse.json({ languages: compilerLanguages.map((language) => {
+      const row: any = usage.get(language.editorKey);
+      const executions = Number(row?.execution_count || 0);
+      const successful = Number(row?.successful_count || 0);
+      return { name: language.name, slug: language.editorKey, executionType: language.executionType, languageId: languageIds[language.editorKey], isActive: true, executionCount: executions, successRate: executions ? Number(((successful / executions) * 100).toFixed(1)) : null };
+    }) });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -14,7 +24,7 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const { email, ...langData } = await req.json();
-    if (!await isAdmin(email)) {
+    if (!await requireAdmin(req)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
@@ -35,7 +45,7 @@ export async function POST(req: Request) {
 export async function PUT(req: Request) {
   try {
     const { email, id, ...langData } = await req.json();
-    if (!await isAdmin(email)) {
+    if (!await requireAdmin(req)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
@@ -64,7 +74,7 @@ export async function PUT(req: Request) {
 export async function DELETE(req: Request) {
   try {
     const { email, id } = await req.json();
-    if (!await isAdmin(email)) {
+    if (!await requireAdmin(req)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 

@@ -497,6 +497,9 @@ async function executeViaJudge0(
 
     // 2. Poll result
     const maxAttempts = 20;
+    const pollingStartedAt = Date.now();
+    let lastStatusId: number | null = null;
+    let lastStatusDescription: string | null = null;
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       await new Promise((resolve) => setTimeout(resolve, 500));
@@ -536,6 +539,10 @@ async function executeViaJudge0(
         compileOutputLength: typeof result.compile_output === "string" ? result.compile_output.length : 0,
         stderrLength: typeof result.stderr === "string" ? result.stderr.length : 0,
       });
+      lastStatusId = typeof result.status?.id === "number" ? result.status.id : null;
+      lastStatusDescription = typeof result.status?.description === "string"
+        ? result.status.description
+        : null;
 
       // Status 1 = In Queue
       // Status 2 = Processing
@@ -571,6 +578,14 @@ async function executeViaJudge0(
       });
     }
 
+    console.warn("[Judge0] polling budget exhausted", {
+      requestId: requestId ?? null,
+      maxAttempts,
+      elapsedMs: Date.now() - pollingStartedAt,
+      lastStatusId,
+      lastStatusDescription,
+      reason: "Judge0 remained queued or processing until the polling budget ended",
+    });
     return NextResponse.json({
       output: ["⏱️ Execution timed out while waiting for Judge0."],
       error: "Execution Timeout",

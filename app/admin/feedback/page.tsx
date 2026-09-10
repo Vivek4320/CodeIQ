@@ -8,18 +8,20 @@ export default function FeedbackPage() {
   const { theme } = useTheme();
   const [feedbacks, setFeedbacks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    fetch("/api/feedback").then(r => r.json()).then(d => { setFeedbacks(d.feedbacks || []); setLoading(false); }).catch(() => setLoading(false));
+    fetch("/api/feedback").then(r => { if (!r.ok) throw new Error(); return r.json(); }).then(d => setFeedbacks(d.feedback || [])).catch(() => setError(true)).finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <p style={{ color: theme.faint }}>Loading feedback...</p>;
+  if (loading) return <p style={{ color: theme.faint }}>Loading...</p>;
+  if (error) return <p style={{ color: "#EF4444" }}>Unable to load data. Please try again.</p>;
 
   return (
     <div>
       <h1 style={{ fontSize: "24px", fontWeight: 600, marginBottom: "24px" }}>Feedback ({feedbacks.length})</h1>
       <div style={{ display: "grid", gap: "12px" }}>
-        {feedbacks.length === 0 && <p style={{ color: theme.faint }}>No feedback yet</p>}
+        {feedbacks.length === 0 && <p style={{ color: theme.faint }}>No data available yet.</p>}
         {feedbacks.map((f: any) => (
           <div key={f.id} style={{ padding: "16px", border: `1px solid ${theme.border}`, borderRadius: "12px", backgroundColor: theme.panel }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>

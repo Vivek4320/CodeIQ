@@ -24,11 +24,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    try {
-      const email = localStorage.getItem("codeiq_admin");
-      setAdminEmail(email);
-    } catch {}
-    setChecking(false);
+    fetch("/api/admin/session").then((response) => response.ok ? response.json() : null).then((data) => setAdminEmail(data?.email || null)).catch(() => setAdminEmail(null)).finally(() => setChecking(false));
   }, []);
 
   useEffect(() => {
@@ -50,8 +46,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (!adminEmail) return null;
 
   const logout = () => {
-    localStorage.removeItem("codeiq_admin");
-    router.push("/admin/login");
+    fetch("/api/admin/session", { method: "DELETE" }).finally(() => router.push("/admin/login"));
   };
 
   return (
@@ -141,6 +136,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           .admin-mobile-header {
             display: flex !important;
           }
+        }
+        @media (min-width: 769px) {
+          .admin-sidebar { transform: translateX(0) !important; }
+          .admin-main { margin-left: 220px; max-width: 1440px; }
         }
       `}</style>
     </div>

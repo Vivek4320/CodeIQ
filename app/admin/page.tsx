@@ -10,8 +10,12 @@ interface Stats {
   totalLanguages: number;
   totalRuns: number;
   totalFeedback: number;
-  avgRating: number;
-  errorRate: number;
+  avgRating: number | null;
+  activeUsers: number;
+  successfulRuns: number;
+  failedRuns: number;
+  successRate: number | null;
+  errorRate: number | null;
 }
 
 export default function AdminDashboard() {
@@ -21,23 +25,22 @@ export default function AdminDashboard() {
   const [recentRuns, setRecentRuns] = useState<any[]>([]);
   const [langUsage, setLangUsage] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    const email = localStorage.getItem("codeiq_admin");
-    if (!email) return;
-    fetch(`/api/admin/stats?email=${email}`)
-      .then(r => r.json())
+    fetch("/api/admin/stats")
+      .then(r => { if (!r.ok) throw new Error(); return r.json(); })
       .then(data => {
         setStats(data.stats);
         setRecentRuns(data.recentRuns || []);
         setLangUsage(data.langUsage || []);
       })
-      .catch(() => {})
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <p style={{ color: theme.faint }}>Loading dashboard...</p>;
-  if (!stats) return <p style={{ color: theme.faint }}>Failed to load stats</p>;
+  if (loading) return <p style={{ color: theme.faint }}>Loading...</p>;
+  if (error || !stats) return <p style={{ color: "#EF4444" }}>Unable to load data. Please try again.</p>;
 
   const topLang = langUsage[0];
 
@@ -48,10 +51,10 @@ export default function AdminDashboard() {
       {/* Stats Cards — 4 key metrics */}
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: "16px", marginBottom: "28px" }}>
         {[
-          { label: "Total Users", value: stats.totalUsers, icon: Users, color: "#60A5FA", sub: "registered" },
-          { label: "Languages", value: stats.totalLanguages, icon: Code2, color: "#34D399", sub: "active" },
+          { label: "Total Users", value: stats.totalUsers, icon: Users, color: "#60A5FA", sub: `${stats.activeUsers} joined in 30 days` },
           { label: "Total Runs", value: stats.totalRuns, icon: Play, color: "#FBBF24", sub: "executions" },
-          { label: "Error Rate", value: `${stats.errorRate}%`, icon: AlertTriangle, color: stats.errorRate > 5 ? "#EF4444" : "#34D399", sub: "of all runs" },
+          { label: "Successful Runs", value: stats.successfulRuns, icon: TrendingUp, color: "#34D399", sub: stats.successRate === null ? "No execution data yet" : `${stats.successRate}% success rate` },
+          { label: "Failed Runs", value: stats.failedRuns, icon: AlertTriangle, color: "#EF4444", sub: stats.errorRate === null ? "No execution data yet" : `${stats.errorRate}% error rate` },
         ].map(({ label, value, icon: Icon, color, sub }) => (
           <div key={label} style={{ padding: "20px", border: `1px solid ${theme.border}`, borderRadius: "12px", backgroundColor: theme.panel }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
@@ -71,22 +74,22 @@ export default function AdminDashboard() {
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "12px" }}>
             <div style={{ padding: "14px", borderRadius: "8px", backgroundColor: `${theme.text}05` }}>
               <div style={{ fontSize: "11px", color: theme.faint, marginBottom: "4px" }}>⭐ Avg Rating</div>
-              <div style={{ fontSize: "22px", fontWeight: 700 }}>{stats.avgRating}</div>
-              <div style={{ fontSize: "11px", color: theme.faint }}>/ 5 from {stats.totalFeedback} reviews</div>
+              <div style={{ fontSize: "22px", fontWeight: 700 }}>{stats.avgRating ?? "Unavailable"}</div>
+              <div style={{ fontSize: "11px", color: theme.faint }}>{stats.totalFeedback} reviews</div>
             </div>
             <div style={{ padding: "14px", borderRadius: "8px", backgroundColor: `${theme.text}05` }}>
               <div style={{ fontSize: "11px", color: theme.faint, marginBottom: "4px" }}>🏆 Top Language</div>
-              <div style={{ fontSize: "22px", fontWeight: 700 }}>{topLang?.language || "N/A"}</div>
-              <div style={{ fontSize: "11px", color: theme.faint }}>{topLang?.count || 0} runs</div>
+              <div style={{ fontSize: "22px", fontWeight: 700 }}>{topLang?.language || "Unavailable"}</div>
+              <div style={{ fontSize: "11px", color: theme.faint }}>{topLang ? `${topLang.count} runs` : "No execution data yet"}</div>
             </div>
             <div style={{ padding: "14px", borderRadius: "8px", backgroundColor: `${theme.text}05` }}>
               <div style={{ fontSize: "11px", color: theme.faint, marginBottom: "4px" }}>📈 Runs per User</div>
-              <div style={{ fontSize: "22px", fontWeight: 700 }}>{stats.totalUsers > 0 ? Math.round(stats.totalRuns / stats.totalUsers) : 0}</div>
+              <div style={{ fontSize: "22px", fontWeight: 700 }}>{stats.totalRuns > 0 && stats.totalUsers > 0 ? (stats.totalRuns / stats.totalUsers).toFixed(1) : "Unavailable"}</div>
               <div style={{ fontSize: "11px", color: theme.faint }}>average executions</div>
             </div>
             <div style={{ padding: "14px", borderRadius: "8px", backgroundColor: `${theme.text}05` }}>
               <div style={{ fontSize: "11px", color: theme.faint, marginBottom: "4px" }}>✅ Success Rate</div>
-              <div style={{ fontSize: "22px", fontWeight: 700 }}>{(100 - stats.errorRate).toFixed(1)}%</div>
+              <div style={{ fontSize: "22px", fontWeight: 700 }}>{stats.successRate === null ? "Unavailable" : `${stats.successRate}%`}</div>
               <div style={{ fontSize: "11px", color: theme.faint }}>of all executions</div>
             </div>
           </div>
@@ -98,7 +101,7 @@ export default function AdminDashboard() {
             <Clock size={14} style={{ color: theme.faint }} />
             <h2 style={{ fontSize: "14px", fontWeight: 600, color: theme.faint }}>Recent Activity</h2>
           </div>
-          {recentRuns.length === 0 && <p style={{ fontSize: "13px", color: theme.faint }}>No activity yet</p>}
+          {recentRuns.length === 0 && <p style={{ fontSize: "13px", color: theme.faint }}>No execution data yet</p>}
           {recentRuns.slice(0, 8).map((r: any, i: number) => {
             const time = new Date(r.created_at);
             const timeAgo = getTimeAgo(time);
@@ -109,7 +112,7 @@ export default function AdminDashboard() {
                   <span style={{ color: theme.text }}>{r.user_name || r.user_email?.split("@")[0] || "User"}</span>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span style={{ color: theme.faint, fontSize: "11px" }}>{r.project_name}</span>
+                  <span style={{ color: r.successful ? "#34D399" : "#EF4444", fontSize: "11px" }}>{r.successful ? "Success" : "Failed"}</span>
                   <span style={{ color: theme.faint, fontSize: "10px" }}>{timeAgo}</span>
                 </div>
               </div>

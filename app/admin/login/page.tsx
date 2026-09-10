@@ -5,9 +5,6 @@ import { useTheme } from "@/components/landing/ThemeContext";
 import { Shield, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
-const ADMIN_EMAIL = "vivekpankhaniya43@gmail.com";
-const ADMIN_PASSWORD = "admin@codeiq"; // Change this in production!
-
 export default function AdminLoginPage() {
   const { theme } = useTheme();
   const [email, setEmail] = useState("");
@@ -21,34 +18,14 @@ export default function AdminLoginPage() {
     setLoading(true);
 
     try {
-      // Check admin credentials
-      if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-        localStorage.setItem("codeiq_admin", email);
-        window.location.href = "/admin";
-        return;
-      }
-
-      // Also check if it's a regular user with admin role
-      const res = await fetch("/api/auth/login", {
+      const res = await fetch("/api/admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
-
-      if (res.ok && data.user) {
-        // Check role
-        const roleRes = await fetch(`/api/admin/check-role?email=${email}`);
-        const roleData = await roleRes.json();
-
-        if (roleData.role === "admin") {
-          localStorage.setItem("codeiq_admin", email);
-          window.location.href = "/admin";
-          return;
-        }
-      }
-
-      setError("Invalid admin credentials");
+      if (!res.ok) setError(data.error || "Invalid admin credentials");
+      else window.location.href = "/admin";
     } catch {
       setError("Login failed");
     } finally {
@@ -88,7 +65,7 @@ export default function AdminLoginPage() {
             </div>
             <div>
               <label style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: theme.faint, display: "block", marginBottom: "6px" }}>Password</label>
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••"
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Your admin password"
                 style={{ width: "100%", padding: "10px 14px", fontSize: "14px", backgroundColor: theme.panel, color: theme.text, border: `1px solid ${theme.border}`, borderRadius: "8px", outline: "none", boxSizing: "border-box" }} required />
             </div>
             <button type="submit" disabled={loading} style={{

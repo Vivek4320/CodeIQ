@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
-
-const ADMIN_EMAIL = "vivekpankhaniya43@gmail.com";
+import { requireAdmin } from "@/lib/admin-session";
 
 // POST — submit feedback (anyone can)
 export async function POST(req: Request) {
@@ -38,11 +37,7 @@ export async function POST(req: Request) {
 // GET — list feedback (admin only)
 export async function GET(req: Request) {
   try {
-    const { searchParams } = new URL(req.url);
-    const email = searchParams.get("email");
-
-    // Only admin can view feedback
-    if (!email || email !== ADMIN_EMAIL) {
+    if (!await requireAdmin(req)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
