@@ -69,7 +69,7 @@ for i in range(1, 8):
       "typescript-editor",
       "go-compiler",
       "rust-compiler",
-      "ruby-compiler",
+      "ruby-compiler",  
       "haskell-compiler",
       "html-editor",
       "css-editor",
