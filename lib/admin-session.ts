@@ -1,5 +1,3 @@
-import { query } from "./db";
-
 const COOKIE_NAME = "codeiq_admin_session";
 const SESSION_TTL_SECONDS = 60 * 60 * 8;
 
@@ -14,6 +12,7 @@ function toHex(bytes: ArrayBuffer): string {
 }
 
 function fromHex(value: string): Uint8Array {
+  if (!/^[0-9a-f]+$/i.test(value) || value.length % 2 !== 0) return new Uint8Array();
   const bytes = new Uint8Array(value.length / 2);
   for (let index = 0; index < bytes.length; index += 1) bytes[index] = parseInt(value.slice(index * 2, index * 2 + 2), 16);
   return bytes;
@@ -24,6 +23,13 @@ async function sign(value: string): Promise<string> {
   return toHex(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(value)));
 }
 
+function constantTimeEqual(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false;
+  let result = 0;
+  for (let index = 0; index < a.length; index += 1) result |= a[index] ^ b[index];
+  return result === 0;
+}
+
 export async function createAdminSession(email: string): Promise<string> {
   const payload = `${encodeURIComponent(email)}|${Math.floor(Date.now() / 1000) + SESSION_TTL_SECONDS}`;
   return `${payload}|${await sign(payload)}`;
@@ -32,12 +38,22 @@ export async function createAdminSession(email: string): Promise<string> {
 export async function getAdminEmailFromSession(value: string | null | undefined): Promise<string | null> {
   if (!value) return null;
   const parts = value.split("|");
-  if (parts.length !== 3 || Number(parts[1]) < Math.floor(Date.now() / 1000)) return null;
-  const expected = await sign(`${parts[0]}|${parts[1]}`);
-  const actual = fromHex(parts[2]);
-  const expectedBytes = fromHex(expected);
-  if (actual.length !== expectedBytes.length || !actual.every((byte, index) => byte === expectedBytes[index])) return null;
-  return decodeURIComponent(parts[0]);
+  if (parts.length !== 3) return null;
+
+  const [encodedEmail, expiresAt, signature] = parts;
+  if (!encodedEmail || !signature || !/^\d+$/.test(expiresAt)) return null;
+  if (Number(expiresAt) < Math.floor(Date.now() / 1000)) return null;
+
+  try {
+    const expected = await sign(`${encodedEmail}|${expiresAt}`);
+    if (!constantTimeEqual(fromHex(signature), fromHex(expected))) return null;
+
+    const email = decodeURIComponent(encodedEmail);
+    const configuredAdminEmail = (process.env.ADMIN_EMAIL || "").trim().toLowerCase();
+    return configuredAdminEmail && email.toLowerCase() === configuredAdminEmail ? email : null;
+  } catch {
+    return null;
+  }
 }
 
 export async function getAdminEmailFromRequest(req: Request): Promise<string | null> {
@@ -47,11 +63,7 @@ export async function getAdminEmailFromRequest(req: Request): Promise<string | n
 }
 
 export async function requireAdmin(req: Request): Promise<string | null> {
-  const email = await getAdminEmailFromRequest(req);
-  if (!email) return null;
-  const rows = await query("SELECT role FROM users WHERE email = $1", [email]);
-  if (email === process.env.ADMIN_EMAIL || rows[0]?.role === "admin") return email;
-  return null;
+  return getAdminEmailFromRequest(req);
 }
 
 export const adminCookieName = COOKIE_NAME;
