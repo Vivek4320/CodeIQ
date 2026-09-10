@@ -24,11 +24,8 @@ export async function POST(req: Request) {
 
     const adminEmail = (process.env.ADMIN_EMAIL || "").trim().toLowerCase();
     const adminPassword = process.env.ADMIN_PASSWORD || "";
-    const sessionSecret = process.env.ADMIN_SESSION_SECRET || "";
 
-    // Admin authentication is intentionally independent from the users table.
-    // Credentials must exist in the server-side environment only.
-    if (!adminEmail || !adminPassword || !sessionSecret) {
+    if (!adminEmail || !adminPassword) {
       console.error("Admin authentication is not configured");
       return NextResponse.json({ error: "Admin authentication is not configured" }, { status: 503 });
     }
