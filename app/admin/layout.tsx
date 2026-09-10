@@ -24,12 +24,38 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    fetch("/api/admin/session").then((response) => response.ok ? response.json() : null).then((data) => setAdminEmail(data?.email || null)).catch(() => setAdminEmail(null)).finally(() => setChecking(false));
-  }, []);
+    // The layout stays mounted when navigating from /admin/login to /admin.
+    // Re-check the session whenever the pathname changes so a newly-created
+    // login cookie is picked up immediately.
+    if (pathname === "/admin/login") {
+      setAdminEmail(null);
+      setChecking(false);
+      return;
+    }
+
+    let cancelled = false;
+    setChecking(true);
+
+    fetch("/api/admin/session", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        if (!cancelled) setAdminEmail(data?.email || null);
+      })
+      .catch(() => {
+        if (!cancelled) setAdminEmail(null);
+      })
+      .finally(() => {
+        if (!cancelled) setChecking(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
 
   useEffect(() => {
     if (!checking && !adminEmail && pathname !== "/admin/login") {
-      router.push("/admin/login");
+      router.replace("/admin/login");
     }
   }, [checking, adminEmail, pathname, router]);
 
@@ -46,12 +72,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (!adminEmail) return null;
 
   const logout = () => {
-    fetch("/api/admin/session", { method: "DELETE" }).finally(() => router.push("/admin/login"));
+    fetch("/api/admin/session", { method: "DELETE" }).finally(() => router.replace("/admin/login"));
   };
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", backgroundColor: theme.bg, color: theme.text }}>
-      {/* Mobile header */}
       <div style={{
         position: "fixed", top: 0, left: 0, right: 0, height: "48px", zIndex: 40,
         display: "none", alignItems: "center", justifyContent: "space-between",
@@ -67,12 +92,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </button>
       </div>
 
-      {/* Sidebar overlay */}
       {sidebarOpen && (
         <div onClick={() => setSidebarOpen(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.5)", zIndex: 45 }} />
       )}
 
-      {/* Sidebar */}
       <aside style={{
         width: "220px", borderRight: `1px solid ${theme.border}`,
         display: "flex", flexDirection: "column", flexShrink: 0,
@@ -115,12 +138,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </aside>
 
-      {/* Main */}
       <main style={{ flex: 1, overflow: "auto", padding: "24px 32px" }} className="admin-main">
         {children}
       </main>
 
-      {/* Responsive CSS */}
       <style>{`
         @media (max-width: 768px) {
           .admin-sidebar {
