@@ -2,8 +2,8 @@ const COOKIE_NAME = "codeiq_admin_session";
 const SESSION_TTL_SECONDS = 60 * 60 * 8;
 
 function secret(): string {
-  const value = process.env.ADMIN_SESSION_SECRET;
-  if (!value) throw new Error("ADMIN_SESSION_SECRET is not set");
+  const value = process.env.ADMIN_PASSWORD;
+  if (!value) throw new Error("ADMIN_PASSWORD is not set");
   return value;
 }
 
