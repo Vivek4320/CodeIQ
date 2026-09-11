@@ -5,10 +5,7 @@ let pool: Pool | null = null;
 function getPool(): Pool {
   if (!pool) {
     const connectionString = process.env.DATABASE_URL;
-    if (!connectionString) {
-      throw new Error("DATABASE_URL is not set");
-    }
-
+    if (!connectionString) throw new Error("DATABASE_URL is not set");
     pool = new Pool({
       connectionString,
       ssl: { rejectUnauthorized: false },
@@ -16,33 +13,24 @@ function getPool(): Pool {
       idleTimeoutMillis: 10000,
       connectionTimeoutMillis: 15000,
     });
-
-    // Handle pool errors
-    pool.on("error", (err) => {
-      console.error("Database pool error:", err.message);
-    });
+    pool.on("error", (err) => console.error("Database pool error:", err.message));
   }
   return pool;
 }
 
-// Helper: run query and return rows
 export async function query(sql: string, params?: any[]): Promise<any[]> {
   try {
-    const result = await getPool().query(sql, params);
-    return result.rows;
+    return (await getPool().query(sql, params)).rows;
   } catch (error: any) {
     console.error("Query error:", error.message);
     throw error;
   }
 }
 
-// Ensure tables exist — lazy, only runs on first actual DB call
 let tablesInitialized = false;
 
 export async function ensureTables() {
-  if (tablesInitialized) return;
-  if (!process.env.DATABASE_URL) return;
-
+  if (tablesInitialized || !process.env.DATABASE_URL) return;
   try {
     const p = getPool();
     await p.query(`CREATE TABLE IF NOT EXISTS users (
@@ -76,14 +64,29 @@ export async function ensureTables() {
       rating INTEGER NOT NULL, comment TEXT NOT NULL, created_at TIMESTAMPTZ DEFAULT NOW()
     )`);
     await p.query(`CREATE TABLE IF NOT EXISTS languages (
-      id SERIAL PRIMARY KEY, name VARCHAR(50) NOT NULL, slug VARCHAR(50) UNIQUE NOT NULL,
-      extension VARCHAR(10) NOT NULL, is_active BOOLEAN DEFAULT TRUE,
+      id SERIAL PRIMARY KEY, name VARCHAR(100) NOT NULL, slug VARCHAR(100) UNIQUE NOT NULL,
+      extension VARCHAR(20) NOT NULL, is_active BOOLEAN DEFAULT TRUE,
       compiler_cmd VARCHAR(255) DEFAULT NULL, run_cmd TEXT DEFAULT NULL,
       compile_cmd TEXT DEFAULT NULL, piston_lang VARCHAR(50) DEFAULT NULL,
       piston_version VARCHAR(20) DEFAULT NULL, stdin_support BOOLEAN DEFAULT FALSE,
       category VARCHAR(50) DEFAULT 'general', sort_order INTEGER DEFAULT 0,
-      created_at TIMESTAMPTZ DEFAULT NOW()
+      execution_type VARCHAR(20) DEFAULT 'judge0', language_id INTEGER DEFAULT NULL,
+      editor_key VARCHAR(100) DEFAULT NULL, title TEXT DEFAULT NULL, description TEXT DEFAULT NULL,
+      h1 TEXT DEFAULT NULL, version VARCHAR(100) DEFAULT NULL, sample_code TEXT DEFAULT NULL,
+      use_cases JSONB DEFAULT '[]'::jsonb, faq_items JSONB DEFAULT '[]'::jsonb,
+      related_slugs JSONB DEFAULT '[]'::jsonb, created_at TIMESTAMPTZ DEFAULT NOW()
     )`);
+
+    const columns = [
+      ["execution_type", "VARCHAR(20) DEFAULT 'judge0'"], ["language_id", "INTEGER DEFAULT NULL"],
+      ["editor_key", "VARCHAR(100) DEFAULT NULL"], ["title", "TEXT DEFAULT NULL"],
+      ["description", "TEXT DEFAULT NULL"], ["h1", "TEXT DEFAULT NULL"],
+      ["version", "VARCHAR(100) DEFAULT NULL"], ["sample_code", "TEXT DEFAULT NULL"],
+      ["use_cases", "JSONB DEFAULT '[]'::jsonb"], ["faq_items", "JSONB DEFAULT '[]'::jsonb"],
+      ["related_slugs", "JSONB DEFAULT '[]'::jsonb"],
+    ];
+    for (const [name, type] of columns) await p.query(`ALTER TABLE languages ADD COLUMN IF NOT EXISTS ${name} ${type}`);
+
     tablesInitialized = true;
     console.log("Database tables ready");
   } catch (err: any) {
