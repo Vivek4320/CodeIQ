@@ -59,6 +59,30 @@ function rowToLanguage(row: any): RegistryLanguage {
   };
 }
 
+function mergeBuiltInLanguage(
+  staticLanguage: CompilerLanguage,
+  dbLanguage?: RegistryLanguage,
+): RegistryLanguage {
+  const fallback = staticToRegistry(staticLanguage);
+  if (!dbLanguage) return fallback;
+
+  // Database rows are allowed to customize built-ins, but an incomplete legacy
+  // row must never disable an existing language. Critical execution metadata
+  // falls back to the built-in definition when it is missing or invalid.
+  return {
+    ...fallback,
+    ...dbLanguage,
+    editorKey: dbLanguage.editorKey || fallback.editorKey,
+    executionType: dbLanguage.executionType || fallback.executionType,
+    languageId: dbLanguage.languageId ?? fallback.languageId,
+    extension: dbLanguage.extension || fallback.extension,
+    sampleCode: dbLanguage.sampleCode || fallback.sampleCode,
+    version: dbLanguage.version || fallback.version,
+    stdinSupport: dbLanguage.stdinSupport || fallback.stdinSupport,
+    category: dbLanguage.category || fallback.category,
+  };
+}
+
 export async function getLanguageRegistry(): Promise<RegistryLanguage[]> {
   try {
     const rows = await query(`
@@ -74,12 +98,13 @@ export async function getLanguageRegistry(): Promise<RegistryLanguage[]> {
     const dbByEditorKey = new Map(dbLanguages.map((language) => [language.editorKey, language]));
     const dbBySlug = new Map(dbLanguages.map((language) => [language.slug, language]));
 
-    // Keep all built-in languages available. Database rows override a built-in
-    // language with the same editor key/slug, while new DB languages are appended.
+    // Keep every built-in language available. Database rows customize matching
+    // built-ins, while genuinely new DB languages are appended.
     const merged = compilerLanguages.map((language) =>
-      dbByEditorKey.get(language.editorKey) ||
-      dbBySlug.get(language.slug) ||
-      staticToRegistry(language)
+      mergeBuiltInLanguage(
+        language,
+        dbByEditorKey.get(language.editorKey) || dbBySlug.get(language.slug),
+      )
     );
 
     const builtInKeys = new Set(compilerLanguages.map((language) => language.editorKey));
