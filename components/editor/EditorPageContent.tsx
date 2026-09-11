@@ -346,7 +346,7 @@ function EditorPage({ initialLanguage }: { initialLanguage?: string } = {}) {
     }
   }, [isWebLanguage, htmlCode, cssCode, toast, code, language, user, projectName, detectInputPrompts]);
 
-  const showOutputPanel = showTerminal || isRunning || output.length > 0 || inputPrompts.length > 0;
+  const showOutputPanel = !isWebLanguage || showTerminal || isRunning || output.length > 0 || inputPrompts.length > 0;
 
   const handleReset = useCallback(() => {
     setCode(DEFAULT_CODE[language] || "");
