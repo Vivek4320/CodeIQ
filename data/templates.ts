@@ -751,59 +751,47 @@ puts [1, 2, 3].map(&doubler)`,
     language: "html",
     category: "UI",
     description: "Responsive card with CSS",
-    code: `<div class="card">
-  <div class="card-image"></div>
-  <div class="card-body">
-    <span class="badge">New</span>
-    <h2>Card Title</h2>
-    <p>This is a responsive card component with hover effects and smooth animations.</p>
-    <div class="card-footer">
-      <button class="btn-primary">Get Started</button>
-      <button class="btn-ghost">Learn More</button>
+    code: `<main class="hero-section">
+  <div class="hero-content">
+    <span class="eyebrow">CodeIQ Web Starter</span>
+    <h1>Build something worth sharing.</h1>
+    <p>
+      A clean HTML starting point for experimenting with layouts,
+      content, and interactive ideas.
+    </p>
+
+    <div class="hero-actions">
+      <a href="#features" class="primary-action">Explore Project</a>
+      <a href="#features" class="secondary-action">View Features</a>
     </div>
   </div>
-</div>
 
-<style>
-  .card {
-    max-width: 360px;
-    border-radius: 16px;
-    overflow: hidden;
-    background: #1a1a2e;
-    color: #fff;
-    font-family: system-ui, sans-serif;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-    transition: transform 0.3s ease;
-  }
-  .card:hover { transform: translateY(-4px); }
-  .card-image {
-    height: 180px;
-    background: linear-gradient(135deg, #667eea, #764ba2);
-  }
-  .card-body { padding: 20px; }
-  .badge {
-    display: inline-block;
-    padding: 4px 10px;
-    background: #667eea33;
-    color: #667eea;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 600;
-    margin-bottom: 10px;
-  }
-  h2 { margin: 0 0 8px; font-size: 20px; }
-  p { margin: 0 0 16px; color: #999; line-height: 1.5; font-size: 14px; }
-  .card-footer { display: flex; gap: 8px; }
-  .btn-primary {
-    flex: 1; padding: 10px; border: none; border-radius: 8px;
-    background: #667eea; color: #fff; font-weight: 600; cursor: pointer;
-  }
-  .btn-ghost {
-    flex: 1; padding: 10px; border-radius: 8px;
-    background: transparent; color: #999; border: 1px solid #333;
-    font-weight: 600; cursor: pointer;
-  }
-</style>`,
+  <div class="feature-list" id="features">
+    <article class="feature">
+      <span class="feature-number">01</span>
+      <div>
+        <h2>Simple Structure</h2>
+        <p>Start with semantic HTML that is easy to customize.</p>
+      </div>
+    </article>
+
+    <article class="feature">
+      <span class="feature-number">02</span>
+      <div>
+        <h2>Responsive Layout</h2>
+        <p>Create pages that feel good on desktop and mobile screens.</p>
+      </div>
+    </article>
+
+    <article class="feature">
+      <span class="feature-number">03</span>
+      <div>
+        <h2>Ready to Style</h2>
+        <p>Pair this template with the CSS template for a complete demo.</p>
+      </div>
+    </article>
+  </div>
+</main>`,
   },
   {
     id: "css-grid",
@@ -811,49 +799,152 @@ puts [1, 2, 3].map(&doubler)`,
     language: "css",
     category: "Layout",
     description: "Responsive grid with auto-fit",
-    code: `/* CSS Grid — Responsive layout */
-* { margin: 0; padding: 0; box-sizing: border-box; }
+    code: `/* CodeIQ CSS Starter — Modern Responsive Layout */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
 
 body {
-  font-family: 'Segoe UI', system-ui, sans-serif;
-  background: #0f0f23;
-  color: #e0e0e0;
+  margin: 0;
   min-height: 100vh;
-  padding: 2rem;
+  padding: 48px 24px;
+  font-family: Inter, Arial, sans-serif;
+  background: #f6f8fc;
+  color: #172033;
+}
+
+.hero-section {
+  width: min(100%, 920px);
+  margin: 0 auto;
+  padding: 56px;
+  border: 1px solid #e1e6ef;
+  border-radius: 28px;
+  background: #ffffff;
+  box-shadow: 0 20px 50px rgba(23, 32, 51, 0.08);
+}
+
+.hero-content {
+  max-width: 680px;
+}
+
+.eyebrow {
+  display: inline-block;
+  margin-bottom: 18px;
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 h1 {
-  text-align: center;
-  margin-bottom: 2rem;
-  font-size: 2rem;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  margin: 0;
+  font-size: clamp(2.4rem, 6vw, 4.8rem);
+  line-height: 1;
+  letter-spacing: -0.05em;
 }
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
-  max-width: 1200px;
-  margin: 0 auto;
+.hero-content > p {
+  max-width: 620px;
+  margin: 24px 0 0;
+  color: #667085;
+  font-size: 18px;
+  line-height: 1.7;
 }
 
-.grid-item {
-  background: #1a1a2e;
-  border-radius: 12px;
-  padding: 1.5rem;
-  border: 1px solid #2a2a4a;
-  transition: all 0.3s ease;
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 32px;
 }
 
-.grid-item:hover {
-  border-color: #667eea;
+.hero-actions a {
+  padding: 12px 18px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 700;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.hero-actions a:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
 }
 
-.grid-item h3 { margin-bottom: 0.5rem; color: #667eea; }
-.grid-item p { color: #888; font-size: 0.9rem; line-height: 1.5; }`,
+.primary-action {
+  background: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.2);
+}
+
+.primary-action:hover {
+  background: #1d4ed8;
+}
+
+.secondary-action {
+  border: 1px solid #d8dee9;
+  background: #ffffff;
+  color: #344054;
+}
+
+.secondary-action:hover {
+  background: #f8fafc;
+}
+
+.feature-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 56px;
+}
+
+.feature {
+  padding: 22px;
+  border: 1px solid #e7ebf2;
+  border-radius: 18px;
+  background: #f9fafc;
+}
+
+.feature-number {
+  display: block;
+  margin-bottom: 24px;
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.feature h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+.feature p {
+  margin: 0;
+  color: #667085;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+@media (max-width: 720px) {
+  body {
+    padding: 24px 16px;
+  }
+
+  .hero-section {
+    padding: 32px 24px;
+    border-radius: 20px;
+  }
+
+  .feature-list {
+    grid-template-columns: 1fr;
+    margin-top: 40px;
+  }
+}`,
   },
 ];
