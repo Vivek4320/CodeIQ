@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { X, Search, Code2, FileCode, Layout, Database, Server, Cpu, Braces } from "lucide-react";
 import { useTheme } from "@/components/landing/ThemeContext";
+import { themes, type ThemeKey } from "@/components/landing/theme";
+import { useTheme } from "@/components/landing/ThemeContext";
 import { templates, type Template } from "@/data/templates";
 
 interface TemplateSelectorProps {
@@ -27,6 +29,17 @@ const CATEGORY_ICONS: Record<string, any> = {
   Layout: Layout,
 };
 
+// HTML templates should contain HTML only. Their CSS is provided separately
+// through the CSS templates so users can keep index.html and style.css clean.
+function getTemplateCode(template: Template): string {
+  if (template.language !== "html") return template.code;
+
+  return template.code
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 export default function TemplateSelector({ language, onSelect, onClose }: TemplateSelectorProps) {
   const { theme } = useTheme();
   const [search, setSearch] = useState("");
@@ -41,7 +54,7 @@ export default function TemplateSelector({ language, onSelect, onClose }: Templa
   const languages = [...new Set(templates.map((t) => t.language))];
 
   const handleSelect = (template: Template) => {
-    onSelect(template.code, template.language);
+    onSelect(getTemplateCode(template), template.language);
     onClose();
   };
 
@@ -63,7 +76,6 @@ export default function TemplateSelector({ language, onSelect, onClose }: Templa
           boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
         }}
       >
-        {/* Header */}
         <div style={{ padding: "16px 20px", borderBottom: `1px solid ${theme.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <div style={{ width: "32px", height: "32px", borderRadius: "8px", backgroundColor: `${theme.accent}15`, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -81,7 +93,6 @@ export default function TemplateSelector({ language, onSelect, onClose }: Templa
           </button>
         </div>
 
-        {/* Search */}
         <div style={{ padding: "12px 20px 8px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 12px", backgroundColor: theme.bg, border: `1px solid ${theme.border}`, borderRadius: "8px" }}>
             <Search size={14} style={{ color: theme.muted, flexShrink: 0 }} />
@@ -90,7 +101,6 @@ export default function TemplateSelector({ language, onSelect, onClose }: Templa
           </div>
         </div>
 
-        {/* Language tabs */}
         <div style={{ padding: "8px 20px", display: "flex", gap: "6px", overflowX: "auto", flexShrink: 0 }}>
           {languages.map((lang) => (
             <button key={lang} onClick={() => setSelectedLang(lang)}
@@ -106,12 +116,9 @@ export default function TemplateSelector({ language, onSelect, onClose }: Templa
           ))}
         </div>
 
-        {/* Templates list */}
         <div style={{ flex: 1, overflowY: "auto", padding: "8px 20px 16px" }}>
           {filtered.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "40px 20px", color: theme.muted, fontSize: "13px" }}>
-              No templates found
-            </div>
+            <div style={{ textAlign: "center", padding: "40px 20px", color: theme.muted, fontSize: "13px" }}>No templates found</div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               {filtered.map((template) => {
@@ -133,9 +140,7 @@ export default function TemplateSelector({ language, onSelect, onClose }: Templa
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, marginBottom: "2px" }}>{template.name}</div>
                       <div style={{ fontSize: "11px", color: theme.muted, lineHeight: 1.4 }}>{template.description}</div>
-                      <div style={{ display: "inline-block", marginTop: "4px", padding: "2px 6px", fontSize: "9px", fontWeight: 600, color: theme.accent, backgroundColor: `${theme.accent}10`, borderRadius: "4px" }}>
-                        {template.category}
-                      </div>
+                      <div style={{ display: "inline-block", marginTop: "4px", padding: "2px 6px", fontSize: "9px", fontWeight: 600, color: theme.accent, backgroundColor: `${theme.accent}10`, borderRadius: "4px" }}>{template.category}</div>
                     </div>
                   </button>
                 );
