@@ -4,6 +4,7 @@ import { execSync, exec as execCb } from "child_process";
 import { writeFileSync, unlinkSync, existsSync } from "fs";
 import { join } from "path";
 import { query } from "@/lib/db";
+import { getLanguageByEditorKey, getLanguageByRegistrySlug, type RegistryLanguage } from "@/lib/languageRegistry";
 
 // Extend Vercel serverless function timeout to 60 seconds
 // (default is 10s on hobby plan, which is too short for Judge0 polling)
@@ -191,6 +192,11 @@ export async function POST(req: Request) {
       }
     }
 
+    // Resolve execution metadata from the central language registry.
+    // The registry controls newly-added Judge0 languages while the existing
+    // execution paths below remain unchanged for built-in languages.
+    const registryLanguage = await getLanguageByEditorKey(language) || await getLanguageByRegistrySlug(language);
+
     // Java requires login on every run
     if (language === "java") {
       const userEmail = req.headers.get("x-user-email");
@@ -231,10 +237,11 @@ export async function POST(req: Request) {
       code,
       stdinInput,
       requestId,
+      registryLanguage,
     );
 
     if (judgeResult) return judgeResult;
-    if (JUDGE0_LANGUAGES[language] && !isValidJudge0Url(JUDGE0_API_URL)) {
+    if ((registryLanguage?.executionType === "judge0" || JUDGE0_LANGUAGES[language]) && !isValidJudge0Url(JUDGE0_API_URL)) {
       console.error("[JUDGE0 DEBUG] service unavailable path", {
         requestId,
         reason: "invalid-or-missing-url",
@@ -249,8 +256,22 @@ export async function POST(req: Request) {
         requestId,
       );
     }
+    if (registryLanguage?.executionType === "live-vm") {
+      return NextResponse.json(
+        { output: [], error: `Language "${registryLanguage.name}" is configured as live-vm, but this execution runtime is not available yet.` },
+        { status: 400 }
+      );
+    }
+
+    if (registryLanguage?.executionType === "live-preview") {
+      return NextResponse.json(
+        { output: [], error: `Language "${registryLanguage.name}" uses the live preview editor.` },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json(
-      { output: [], error: `Language "${language}" is not supported. Supported: JavaScript, TypeScript, Python, C, C++, Java, Go, Rust, Ruby, Haskell` },
+      { output: [], error: `Language "${language}" is not supported. Add it to the central registry with a valid execution type and Judge0 Language ID.` },
       { status: 400 }
     );
   } catch (error: any) {
@@ -423,8 +444,13 @@ async function executeViaJudge0(
   code: string,
   stdinInput?: string,
   requestId?: string,
+  registryLanguage?: RegistryLanguage,
 ): Promise<NextResponse | null> {
-  const languageId = JUDGE0_LANGUAGES[lang];
+  // New Judge0 languages use the ID configured in Admin → Languages.
+  // Built-in languages keep the legacy map as a backward-compatible fallback.
+  const languageId = registryLanguage?.executionType === "judge0"
+    ? registryLanguage.languageId
+    : JUDGE0_LANGUAGES[lang] ?? null;
   logJudge0Config();
 
   if (!languageId || !isValidJudge0Url(JUDGE0_API_URL)) {
@@ -432,13 +458,19 @@ async function executeViaJudge0(
       requestId: requestId ?? null,
       language: lang,
       languageId: languageId || null,
+      registryExecutionType: registryLanguage?.executionType || null,
       reason: !languageId ? "unsupported-language" : "invalid-or-missing-url",
     });
     return null;
   }
 
   try {
-    console.info("[Judge0] request started", { requestId: requestId ?? null, language: lang, languageId });
+    console.info("[Judge0] request started", {
+      requestId: requestId ?? null,
+      language: lang,
+      languageId,
+      registryLanguage: registryLanguage?.name || null,
+    });
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
@@ -868,7 +900,6 @@ function executeJS(code: string) {
     const script = new vm.Script(wrappedCode, { filename: "user-code.js" });
     const context = vm.createContext(sandbox);
     const result = script.runInContext(context, { timeout: 5000 });
-    // If result is a promise, wait for it
     if (result && typeof result.then === "function") {
       return new Promise((resolve) => {
         result.then(() => {
@@ -878,7 +909,6 @@ function executeJS(code: string) {
         }).catch((err: any) => {
           resolve(NextResponse.json({ output: [], error: `Runtime Error: ${err.message}` }));
         });
-        // Safety timeout
         setTimeout(() => {
           if (logs.length === 0) logs.push("(no output)");
           logs.push("", "Process exited with code 0");
@@ -905,7 +935,6 @@ function safeMathExpr(expr: string): string {
   try {
     const s = expr.replace(/[^0-9+\-*/().%\s]/g, "").trim();
     if (!s) return expr;
-    // Tokenize and evaluate with precedence climbing
     let pos = 0;
     const tokens = s.match(/\d+\.?\d*|[+\-*/%()]/g) || [];
     function parseExpr(): number {
@@ -941,12 +970,10 @@ function safeMathExpr(expr: string): string {
 // Evaluate simple math expressions with variable support
 function evalExpr(expr: string, vars: Record<string, string>): string {
   try {
-    // Replace variable names with their values
     let resolved = expr.replace(/\b([a-zA-Z_]\w*)\b/g, (match) => {
       if (match in vars) return vars[match];
       return match;
     });
-    // Try math evaluation
     const cleaned = resolved.replace(/[^0-9+\-*/().%\s]/g, "").trim();
     if (cleaned && /^\d[\d+\-*/().%\s]*$/.test(cleaned)) {
       const result = Function(`"use strict"; return (${cleaned})`)();
@@ -986,13 +1013,10 @@ function extractPrints(code: string, patterns: RegExp[]): string[] {
 // Resolve variable references in a string (for Rust simulator)
 function resolveVars(str: string, vars: Record<string, string>): string {
   let s = str;
-  // If it's a bare variable name, resolve it directly
   if (/^\w+$/.test(s) && s in vars) return vars[s];
-  // Remove surrounding quotes if present
   if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
     s = s.slice(1, -1);
   }
-  // Replace {var} and {} patterns
   return s.replace(/\{(\w+)\}/g, (_, name) => vars[name] ?? `{${name}}`)
     .replace(/\{\}/g, "");
 }
@@ -1021,11 +1045,8 @@ function injectStdin(lang: string, code: string, stdinInput: string, inputPrompt
   const lines = stdinInput.split("\n").filter(l => l.trim() !== "");
 
   if (lang === "python") {
-    // Replace input() calls with hardcoded values
     let injected = code;
     let inputIndex = 0;
-
-    // Match input("prompt") or input() patterns
     injected = injected.replace(/input\s*\(\s*["']([^"']*)["']\s*\)/g, (_, prompt) => {
       const value = lines[inputIndex] || "";
       inputIndex++;
@@ -1036,12 +1057,10 @@ function injectStdin(lang: string, code: string, stdinInput: string, inputPrompt
       inputIndex++;
       return `"${value}"`;
     });
-
     return injected;
   }
 
   if (lang === "javascript" || lang === "typescript") {
-    // Replace prompt() calls with hardcoded values
     let injected = code;
     let inputIndex = 0;
     injected = injected.replace(/prompt\s*\(\s*["']([^"']*)["']\s*\)/g, (_, prompt) => {
@@ -1060,7 +1079,6 @@ function injectStdin(lang: string, code: string, stdinInput: string, inputPrompt
   if (lang === "ruby") {
     let injected = code;
     let inputIndex = 0;
-    // Replace gets with hardcoded values
     injected = injected.replace(/gets\.chomp/g, () => {
       const value = lines[inputIndex] || "";
       inputIndex++;
@@ -1075,8 +1093,6 @@ function injectStdin(lang: string, code: string, stdinInput: string, inputPrompt
   }
 
   if (lang === "go") {
-    // For Go, we can use a simulated approach
-    // Replace fmt.Scan with hardcoded values
     let injected = code;
     let inputIndex = 0;
     injected = injected.replace(/fmt\.Scan\s*\(\s*&\w+\s*\)/g, () => {
@@ -1087,7 +1103,6 @@ function injectStdin(lang: string, code: string, stdinInput: string, inputPrompt
     return injected;
   }
 
-  // For other languages, return null (use simulator)
   return null;
 }
 
@@ -1098,30 +1113,21 @@ const SIMULATORS: Record<string, (code: string) => string[]> = {
     for (const line of code.split("\n")) {
       const t = line.trim();
       if (t.startsWith("#")) continue;
-
-      // Variable assignment: a = 1, b = a + 2, etc.
       const assignMatch = t.match(/^(\w+)\s*=\s*(.+)$/);
       if (assignMatch && !t.startsWith("print")) {
         const [, name, expr] = assignMatch;
         vars[name] = evalExpr(expr.trim(), vars);
         continue;
       }
-
-      // print() call
       const printMatch = t.match(/^print\s*\((.+)\)\s*$/);
       if (printMatch) {
         let raw = printMatch[1].trim();
-        // f-string: f"Hello {name}"
         if ((raw.startsWith('f"') || raw.startsWith("f'")) && raw.endsWith(raw[1])) {
           raw = raw.slice(2, -1).replace(/\{([^}]+)\}/g, (_, expr) => evalExpr(expr.trim(), vars));
           out.push(raw);
-        }
-        // String literal
-        else if ((raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith("'") && raw.endsWith("'"))) {
+        } else if ((raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith("'") && raw.endsWith("'"))) {
           out.push(raw.slice(1, -1));
-        }
-        // Variable or expression
-        else {
+        } else {
           out.push(evalExpr(raw, vars));
         }
       }
@@ -1246,12 +1252,9 @@ const SIMULATORS: Record<string, (code: string) => string[]> = {
     let matchArms: { pattern: string; value: string }[] = [];
     let inMatch = false;
     let braceDepth = 0;
-
     for (const line of code.split("\n")) {
       const t = line.trim();
       if (t.startsWith("//")) continue;
-
-      // Track let bindings (single-line with ;)
       const letMatch = t.match(/^let\s+(?:mut\s+)?(\w+)\s*=\s*(.+);/);
       if (letMatch && !inMatch) {
         const [, name, val] = letMatch;
@@ -1266,8 +1269,6 @@ const SIMULATORS: Record<string, (code: string) => string[]> = {
         }
         continue;
       }
-
-      // Detect start of match (either `let x = match var {` or standalone `match var {`)
       if (!inMatch) {
         const letMatchStart = t.match(/^let\s+(?:mut\s+)?(\w+)\s*=\s*match\s+(\w+)\s*\{\/?/);
         if (letMatchStart) {
@@ -1276,7 +1277,6 @@ const SIMULATORS: Record<string, (code: string) => string[]> = {
           matchVar = letMatchStart[2];
           matchArms = [];
           braceDepth = (t.match(/\{/g) || []).length - (t.match(/\}/g) || []).length;
-          // Check if arms are on same line (e.g., `match x { 1 => "one" }`)
           const inlineArm = t.match(/(\d+(?:\.\.\=\d+)?|_)\s*=>\s*"([^"]+)"/);
           if (inlineArm) matchArms.push({ pattern: inlineArm[1], value: inlineArm[2] });
           continue;
@@ -1291,21 +1291,16 @@ const SIMULATORS: Record<string, (code: string) => string[]> = {
           continue;
         }
       }
-
-      // Inside match block — collect arms
       if (inMatch) {
         braceDepth += (t.match(/\{/g) || []).length - (t.match(/\}/g) || []).length;
         const armMatch = t.match(/^(\d+(?:\.\.\=\d+)?)\s*=>\s*"([^"]+)"/);
         if (armMatch) matchArms.push({ pattern: armMatch[1], value: armMatch[2] });
         const defaultArm = t.match(/^_\s*=>\s*"([^"]+)"/);
         if (defaultArm) matchArms.push({ pattern: "_", value: defaultArm[1] });
-        // Also check for `_ => expr,` or arm with trailing comma
         const armComma = t.match(/^(\d+(?:\.\.\=\d+)?|_)\s*=>\s*"([^"]+)"/);
         if (armComma && !armMatch && !defaultArm) matchArms.push({ pattern: armComma[1], value: armComma[2] });
-
         if (braceDepth <= 0) {
           inMatch = false;
-          // Resolve match
           const varVal = vars[matchVar];
           if (varVal !== undefined) {
             const numVal = parseInt(varVal);
@@ -1323,16 +1318,10 @@ const SIMULATORS: Record<string, (code: string) => string[]> = {
         }
         continue;
       }
-
-      // Handle println! with 0 args
       const m0 = t.match(/^println!\(\)$/);
       if (m0) { out.push(""); continue; }
-
-      // Handle println!("literal")
       const m1 = t.match(/^println!\("([^"]*?)"\)/);
       if (m1) { out.push(resolveVars(m1[1], vars)); continue; }
-
-      // Handle println!("format", args...) — multiple args
       const m2 = t.match(/^println!\("([^"]*?)"\s*,\s*(.+)\)/);
       if (m2) {
         let fmt = m2[1];
@@ -1346,8 +1335,6 @@ const SIMULATORS: Record<string, (code: string) => string[]> = {
         out.push(fmt);
         continue;
       }
-
-      // Handle println!("first", "second") — string concat
       const m3 = t.match(/^println!\((.+)\)/);
       if (m3) {
         const args = splitArgs(m3[1]);
@@ -1355,8 +1342,6 @@ const SIMULATORS: Record<string, (code: string) => string[]> = {
         out.push(resolved);
         continue;
       }
-
-      // Handle print! (no newline) — accumulate
       const pm = t.match(/^print!\("([^"]*?)"\s*,?\s*(.*)\)/);
       if (pm) {
         let fmt = pm[1];
@@ -1430,7 +1415,6 @@ function stripTypeScript(code: string): string {
       if (trimmed.includes("{") && !trimmed.includes("}")) inBlockRemove = true;
       continue;
     }
-    // Single-line enum → convert to const object
     const enumMatch = trimmed.match(/^(?:export\s+)?enum\s+(\w+)\s*\{(.+)\}/);
     if (enumMatch) {
       const name = enumMatch[1];
@@ -1448,16 +1432,14 @@ function stripTypeScript(code: string): string {
     const gm = line.match(/<(\w+)(?:\s+extends\s+\w+)?>/);
     if (gm) genericTypes.add(gm[1]);
     line = line.replace(/<\w+(?:\s+extends\s+[\w<>]+)?(?:\s*,\s*\w+(?:\s+extends\s+[\w<>]+)?)*>/g, "");
-    // Strip type annotations: const x: Type = ... or const x: Type[] = ... or const x: Type<T> = ...
     line = line.replace(/\b(const|let|var)\s+(\w+)\s*:\s*(?:string|number|boolean|any|void|never|unknown|object|bigint|symbol|undefined|null|Record|Partial|Required|Pick|Omit|Promise|Array)(?:\[\])*(?:<[^>]+>)?(\s*[=;])/g, "$1 $2$3");
     line = line.replace(/\b(const|let|var)\s+(\w+)\s*:\s*[A-Z]\w*(?:\[\])*(?:<[^>]+>)?(\s*[=;])/g, "$1 $2$3");
-    // Strip property/param types: x: Type or x: Type[]
     line = line.replace(/(\w+)\s*:\s*(?:string|number|boolean|any|void|never|unknown|object|bigint|symbol|undefined|null|Record|Partial|Required|Pick|Omit|Promise|Array)(?:\[\])*(?:<[^>]+>)?(?=\s*[,;)\]])/g, "$1");
     line = line.replace(/(\w+)\s*:\s*[A-Z]\w*(?:\[\])*(?:<[^>]+>)?(?=\s*[,;)\]])/g, "$1");
-    for (const gt of genericTypes) line = line.replace(new RegExp(`(\w+)\s*:\s*${gt}\b`, "g"), "$1");
+    for (const gt of genericTypes) line = line.replace(new RegExp(`(\\w+)\\s*:\\s*${gt}\\b`, "g"), "$1");
     line = line.replace(/\)\s*:\s*(?:string|number|boolean|any|void|never|unknown|object|bigint|symbol|undefined|null|Record|Partial|Required|Pick|Omit|Promise|Array)\b\s*([>{=])/g, ")$1");
     line = line.replace(/\)\s*:\s*[A-Z]\w*\s*([>{=])/g, ")$1");
-    for (const gt of genericTypes) { try { line = line.replace(new RegExp(String.raw`)s*:s*${gt}s*([>{=])`, "g"), ")$1"); } catch { } }
+    for (const gt of genericTypes) { try { line = line.replace(new RegExp(String.raw`\)s*:s*${gt}\b s*([>{=])`, "g"), ")$1"); } catch { } }
     line = line.replace(/\bas\s+(?:string|number|boolean|any|void|unknown|object|[\w\[\]<>]+)\b/g, "");
     result.push(line);
   }
