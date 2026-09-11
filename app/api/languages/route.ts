@@ -1,13 +1,24 @@
 import { NextResponse } from "next/server";
-import { query } from "@/lib/db";
+import { getLanguageRegistry } from "@/lib/languageRegistry";
 
 export async function GET() {
   try {
-    const rows = await query(
-      "SELECT id, name, slug, extension, stdin_support, category FROM languages WHERE is_active = $1 ORDER BY sort_order ASC",
-      [true]
-    );
-    return NextResponse.json({ languages: rows });
+    const languages = await getLanguageRegistry();
+    return NextResponse.json({
+      languages: languages.map((language) => ({
+        id: language.editorKey,
+        name: language.name,
+        slug: language.editorKey,
+        pageSlug: language.slug,
+        extension: `.${language.extension.replace(/^\./, "")}`,
+        stdin_support: language.stdinSupport,
+        category: language.category,
+        executionType: language.executionType,
+        languageId: language.languageId,
+        version: language.version,
+        sampleCode: language.sampleCode,
+      })),
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
