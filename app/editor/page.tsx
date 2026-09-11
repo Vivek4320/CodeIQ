@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { EditorView } from "@codemirror/view";
 import EditorPageContent from "@/components/editor/EditorPageContent";
 
 function buildPreview(html: string, css: string) {
@@ -17,11 +18,18 @@ export default function EditorPage() {
     if (!root) return;
 
     const readEditors = () => {
-      const editors = Array.from(root.querySelectorAll(".cm-editor .cm-content")) as HTMLElement[];
-      if (editors.length >= 2) {
+      const editorElements = Array.from(root.querySelectorAll(".cm-editor")) as HTMLElement[];
+      const views = editorElements
+        .map((element) => EditorView.findFromDOM(element))
+        .filter((view): view is EditorView => Boolean(view));
+
+      if (views.length >= 2) {
+        // Read from CodeMirror's document state, not the visible DOM.
+        // This keeps the full source intact even when an editor is scrolled
+        // and CodeMirror virtualizes the off-screen lines.
         setIsWeb(true);
-        setHtml(editors[0]?.innerText ?? "");
-        setCss(editors[1]?.innerText ?? "");
+        setHtml(views[0].state.doc.toString());
+        setCss(views[1].state.doc.toString());
       } else {
         setIsWeb(false);
       }
@@ -29,8 +37,11 @@ export default function EditorPage() {
 
     readEditors();
 
+    // CodeMirror may mount/recreate editor DOM nodes when the layout changes.
+    // The observer only re-discovers the EditorView instances; the actual
+    // source is always read from CodeMirror state, never innerText.
     const observer = new MutationObserver(readEditors);
-    observer.observe(root, { subtree: true, childList: true, characterData: true });
+    observer.observe(root, { subtree: true, childList: true });
 
     return () => observer.disconnect();
   }, []);
