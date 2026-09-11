@@ -1,29 +1,20 @@
-import { MetadataRoute } from 'next';
-import { allLanguageSlugs } from '@/lib/compilerLanguages';
+import type { MetadataRoute } from "next";
+import { getLanguageRegistry } from "@/lib/languageRegistry";
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://code-iq-ai.vercel.app';
+export const revalidate = 3600;
 
-  const languagePages = allLanguageSlugs.map((slug) => ({
-    url: `${baseUrl}/${slug}`,
-    lastModified: new Date(),
-    changeFrequency: 'weekly' as const,
-    priority: 0.8,
-  }));
-
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const baseUrl = "https://code-iq-ai.vercel.app";
+  const languages = await getLanguageRegistry();
+  const now = new Date();
   return [
-    {
-      url: baseUrl,
-      lastModified: new Date(),
-      changeFrequency: 'daily' as const,
-      priority: 1.0,
-    },
-    {
-      url: `${baseUrl}/online-code-compiler`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly' as const,
-      priority: 0.9,
-    },
-    ...languagePages,
+    { url: baseUrl, lastModified: now, changeFrequency: "daily", priority: 1.0 },
+    { url: `${baseUrl}/online-code-compiler`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
+    ...languages.map((language) => ({
+      url: `${baseUrl}/${language.slug}`,
+      lastModified: now,
+      changeFrequency: "weekly" as const,
+      priority: 0.8,
+    })),
   ];
 }
