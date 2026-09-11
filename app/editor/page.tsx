@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { EditorView } from "@codemirror/view";
 import EditorPageContent from "@/components/editor/EditorPageContent";
 
@@ -12,6 +12,8 @@ export default function EditorPage() {
   const [isWeb, setIsWeb] = useState(false);
   const [html, setHtml] = useState("");
   const [css, setCss] = useState("");
+  const lastHtmlRef = useRef("");
+  const lastCssRef = useRef("");
 
   useEffect(() => {
     const root = document.querySelector("#codeiq-editor-root");
@@ -24,12 +26,25 @@ export default function EditorPage() {
         .filter((view): view is EditorView => Boolean(view));
 
       if (views.length >= 2) {
-        // Read from CodeMirror's document state, not the visible DOM.
-        // This keeps the full source intact even when an editor is scrolled
-        // and CodeMirror virtualizes the off-screen lines.
+        // Always read the complete CodeMirror document state.
+        // Never read .cm-content text, because scrolling can change the
+        // visible DOM without changing the actual editor document.
+        const nextHtml = views[0].state.doc.toString();
+        const nextCss = views[1].state.doc.toString();
+
         setIsWeb(true);
-        setHtml(views[0].state.doc.toString());
-        setCss(views[1].state.doc.toString());
+
+        // Only update React state when the source actually changed.
+        // This makes the iframe refresh immediately after typing while
+        // avoiding unnecessary renders during the polling interval.
+        if (nextHtml !== lastHtmlRef.current) {
+          lastHtmlRef.current = nextHtml;
+          setHtml(nextHtml);
+        }
+        if (nextCss !== lastCssRef.current) {
+          lastCssRef.current = nextCss;
+          setCss(nextCss);
+        }
       } else {
         setIsWeb(false);
       }
@@ -37,13 +52,19 @@ export default function EditorPage() {
 
     readEditors();
 
-    // CodeMirror may mount/recreate editor DOM nodes when the layout changes.
-    // The observer only re-discovers the EditorView instances; the actual
-    // source is always read from CodeMirror state, never innerText.
+    // CodeMirror changes its document state without necessarily changing
+    // the DOM tree, so MutationObserver alone cannot detect typing. Poll
+    // the CodeMirror state at a short interval and update only on changes.
+    const interval = window.setInterval(readEditors, 100);
+
+    // Re-discover editors if CodeMirror mounts/recreates their DOM nodes.
     const observer = new MutationObserver(readEditors);
     observer.observe(root, { subtree: true, childList: true });
 
-    return () => observer.disconnect();
+    return () => {
+      window.clearInterval(interval);
+      observer.disconnect();
+    };
   }, []);
 
   useEffect(() => {
