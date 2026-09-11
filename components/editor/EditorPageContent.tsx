@@ -280,6 +280,38 @@ function EditorPage({ initialLanguage }: { initialLanguage?: string } = {}) {
     return prompts;
   }, []);
 
+  const handleRunWithInput = useCallback(async (values: string[]) => {
+    setShowAgent(false);
+    setShowTerminal(true);
+    setIsRunning(true);
+    setOutput([]);
+
+    try {
+      const res = await fetch("/api/execute", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(user?.email ? { "x-user-email": user.email } : {}),
+        },
+        body: JSON.stringify({
+          language,
+          code,
+          stdinInput: values.join("\n"),
+          inputPrompts: inputPrompts.map((item) => item.prompt),
+        }),
+      });
+      const data = await res.json();
+      if (data.error) setOutput([data.error, ...(data.output || [])]);
+      else if (data.output && data.output.length > 0) setOutput(data.output);
+      else setOutput(["(no output)"]);
+    } catch (e: any) {
+      setOutput(["Error: " + e.message]);
+    } finally {
+      setIsRunning(false);
+      setInputPrompts([]);
+    }
+  }, [user, language, code, inputPrompts]);
+
   const handleRun = useCallback(async () => {
     setShowAgent(false);
     if (isWebLanguage) {
@@ -295,11 +327,12 @@ function EditorPage({ initialLanguage }: { initialLanguage?: string } = {}) {
     }
     lastRunCodeRef.current = code;
     setOutput([]);
+    setShowTerminal(true);
     const prompts = detectInputPrompts(language, code);
     const hasInput = /\b(input|gets|scanf|cin|getline)\s*\(/.test(code);
-    if (prompts.length > 0) { setInputPrompts(prompts); setShowTerminal(false); return; }
-    if (hasInput && prompts.length === 0) { setInputPrompts([{ prompt: "stdin", index: 0 }]); setShowTerminal(false); return; }
-    setIsRunning(true); setShowTerminal(false);
+    if (prompts.length > 0) { setInputPrompts(prompts); setIsRunning(false); return; }
+    if (hasInput && prompts.length === 0) { setInputPrompts([{ prompt: "stdin", index: 0 }]); setIsRunning(false); return; }
+    setIsRunning(true);
     try {
       const res = await fetch("/api/execute", { method: "POST", headers: { "Content-Type": "application/json", ...(user?.email ? { "x-user-email": user.email } : {}) }, body: JSON.stringify({ language, code }) });
       const data = await res.json();
@@ -313,7 +346,14 @@ function EditorPage({ initialLanguage }: { initialLanguage?: string } = {}) {
     }
   }, [isWebLanguage, htmlCode, cssCode, toast, code, language, user, projectName, detectInputPrompts]);
 
-  const handleReset = useCallback(() => { setCode(DEFAULT_CODE[language] || ""); setOutput([]); }, [language]);
+  const showOutputPanel = showTerminal || isRunning || output.length > 0 || inputPrompts.length > 0;
+
+  const handleReset = useCallback(() => {
+    setCode(DEFAULT_CODE[language] || "");
+    setOutput([]);
+    setInputPrompts([]);
+    setShowTerminal(false);
+  }, [language]);
 
   const handleSave = useCallback(async () => {
     if (!user) {
@@ -404,10 +444,68 @@ function EditorPage({ initialLanguage }: { initialLanguage?: string } = {}) {
             )}
           </div>
         ) : (
-          <div style={{ width: isMobile ? "100%" : `${splitPos}%`, flex: isMobile ? 1 : "none", display: "flex", flexDirection: "column", border: `1px solid ${theme.border}`, borderRadius: "8px", overflow: "hidden", height: isMobile ? "auto" : "100%" }}>
-            <EditorToolbar language={language} onLanguageChange={handleLanguageChange} onRun={handleRun} onSave={handleSave} isRunning={isRunning} onTemplates={() => setShowTemplates(true)} />
-            <div style={{ flex: 1, minHeight: 0 }}><CodeEditor language={language} value={code} onChange={handleCodeChange} /></div>
-          </div>
+          <>
+            <div
+              style={{
+                width: isMobile ? "100%" : `${splitPos}%`,
+                flex: isMobile ? (showOutputPanel ? "0 0 60%" : 1) : "none",
+                minWidth: 0,
+                minHeight: 0,
+                display: "flex",
+                flexDirection: "column",
+                border: `1px solid ${theme.border}`,
+                borderRadius: "8px",
+                overflow: "hidden",
+                height: isMobile ? "auto" : "100%",
+              }}
+            >
+              <EditorToolbar language={language} onLanguageChange={handleLanguageChange} onRun={handleRun} onSave={handleSave} isRunning={isRunning} onTemplates={() => setShowTemplates(true)} />
+              <div style={{ flex: 1, minHeight: 0 }}><CodeEditor language={language} value={code} onChange={handleCodeChange} /></div>
+            </div>
+
+            {showOutputPanel && (
+              <>
+                {!isMobile && (
+                  <div
+                    onMouseDown={handleDragStart}
+                    title="Drag to resize"
+                    style={{
+                      width: "8px",
+                      flexShrink: 0,
+                      cursor: "col-resize",
+                      backgroundColor: theme.bg,
+                      borderLeft: `1px solid ${theme.border}`,
+                      borderRight: `1px solid ${theme.border}`,
+                    }}
+                  />
+                )}
+                <div
+                  style={{
+                    width: isMobile ? "100%" : `${100 - splitPos}%`,
+                    flex: isMobile ? "0 0 40%" : 1,
+                    minWidth: 0,
+                    minHeight: isMobile ? "220px" : 0,
+                    border: `1px solid ${theme.border}`,
+                    borderRadius: "8px",
+                    overflow: "hidden",
+                    backgroundColor: theme.panel,
+                  }}
+                >
+                  <OutputPanel
+                    output={output}
+                    isRunning={isRunning}
+                    inputFields={inputPrompts}
+                    onRunWithInput={handleRunWithInput}
+                    onClear={() => {
+                      setOutput([]);
+                      setInputPrompts([]);
+                      setShowTerminal(false);
+                    }}
+                  />
+                </div>
+              </>
+            )}
+          </>
         )}
       </div>
 
