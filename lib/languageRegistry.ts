@@ -7,6 +7,7 @@ export interface RegistryLanguage extends CompilerLanguage {
   category: string;
   sortOrder: number;
   isActive: boolean;
+  id?: number;
 }
 
 const LEGACY_JUDGE0_IDS: Record<string, number | null> = {
@@ -54,24 +55,46 @@ function rowToLanguage(row: any): RegistryLanguage {
     category: row.category || "general",
     sortOrder: Number(row.sort_order || 0),
     isActive: row.is_active !== false,
+    id: row.id == null ? undefined : Number(row.id),
   };
 }
 
 export async function getLanguageRegistry(): Promise<RegistryLanguage[]> {
   try {
     const rows = await query(`
-      SELECT slug, name, extension, is_active, stdin_support, category, sort_order,
+      SELECT id, slug, name, extension, is_active, stdin_support, category, sort_order,
              execution_type, language_id, editor_key, title, description, h1, version,
              sample_code, use_cases, faq_items, related_slugs
       FROM languages
       WHERE is_active = TRUE
       ORDER BY sort_order ASC, name ASC
     `);
-    if (rows.length > 0) return rows.map(rowToLanguage);
+
+    const dbLanguages = rows.map(rowToLanguage);
+    const dbByEditorKey = new Map(dbLanguages.map((language) => [language.editorKey, language]));
+    const dbBySlug = new Map(dbLanguages.map((language) => [language.slug, language]));
+
+    // Keep all built-in languages available. Database rows override a built-in
+    // language with the same editor key/slug, while new DB languages are appended.
+    const merged = compilerLanguages.map((language) =>
+      dbByEditorKey.get(language.editorKey) ||
+      dbBySlug.get(language.slug) ||
+      staticToRegistry(language)
+    );
+
+    const builtInKeys = new Set(compilerLanguages.map((language) => language.editorKey));
+    const builtInSlugs = new Set(compilerLanguages.map((language) => language.slug));
+    for (const language of dbLanguages) {
+      if (!builtInKeys.has(language.editorKey) && !builtInSlugs.has(language.slug)) {
+        merged.push(language);
+      }
+    }
+
+    return merged.sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name));
   } catch (error) {
     console.error("Language registry query failed:", error);
+    return compilerLanguages.map(staticToRegistry);
   }
-  return compilerLanguages.map(staticToRegistry);
 }
 
 export async function getLanguageByRegistrySlug(slug: string): Promise<RegistryLanguage | undefined> {
