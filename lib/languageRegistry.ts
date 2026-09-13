@@ -66,9 +66,6 @@ function mergeBuiltInLanguage(
   const fallback = staticToRegistry(staticLanguage);
   if (!dbLanguage) return fallback;
 
-  // Database rows are allowed to customize built-ins, but an incomplete legacy
-  // row must never disable an existing language. Critical execution metadata
-  // falls back to the built-in definition when it is missing or invalid.
   return {
     ...fallback,
     ...dbLanguage,
@@ -83,14 +80,14 @@ function mergeBuiltInLanguage(
   };
 }
 
-export async function getLanguageRegistry(): Promise<RegistryLanguage[]> {
+export async function getLanguageRegistry(includeInactive = false): Promise<RegistryLanguage[]> {
   try {
     const rows = await query(`
       SELECT id, slug, name, extension, is_active, stdin_support, category, sort_order,
              execution_type, language_id, editor_key, title, description, h1, version,
              sample_code, use_cases, faq_items, related_slugs
       FROM languages
-      WHERE is_active = TRUE
+      ${includeInactive ? "" : "WHERE is_active = TRUE"}
       ORDER BY sort_order ASC, name ASC
     `);
 
@@ -98,8 +95,6 @@ export async function getLanguageRegistry(): Promise<RegistryLanguage[]> {
     const dbByEditorKey = new Map(dbLanguages.map((language) => [language.editorKey, language]));
     const dbBySlug = new Map(dbLanguages.map((language) => [language.slug, language]));
 
-    // Keep every built-in language available. Database rows customize matching
-    // built-ins, while genuinely new DB languages are appended.
     const merged = compilerLanguages.map((language) =>
       mergeBuiltInLanguage(
         language,
