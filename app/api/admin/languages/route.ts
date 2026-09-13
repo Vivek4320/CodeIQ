@@ -19,7 +19,7 @@ export async function GET(req: Request) {
   try {
     if (!await requireAdmin(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     const [languages, usage] = await Promise.all([
-      getLanguageRegistry(),
+      getLanguageRegistry(true),
       query("SELECT language, COUNT(*) AS execution_count, COUNT(*) FILTER (WHERE output IS NULL OR (output NOT ILIKE '%error%' AND output NOT ILIKE '%failed%' AND output NOT ILIKE '%exception%' AND output NOT ILIKE '%compilation%')) AS successful_count FROM run_history GROUP BY language"),
     ]);
     const usageMap = new Map(usage.map((row: any) => [row.language, row]));
