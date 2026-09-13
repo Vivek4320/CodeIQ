@@ -61,6 +61,10 @@ const FILE_NAMES: Record<string, string> = {
   css: "style.css",
 };
 
+const FILE_EXTENSIONS: Record<string, string> = Object.fromEntries(
+  Object.entries(FILE_NAMES).map(([lang, file]) => [lang, `.${file.split(".").pop()}`])
+);
+
 interface RunHistory {
   id: number;
   project_name: string;
@@ -96,19 +100,11 @@ function EditorPage({ initialLanguage }: { initialLanguage?: string } = {}) {
   const isDragging = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // HTML/CSS linked state
   const [htmlCode, setHtmlCode] = useState(DEFAULT_CODE.html);
   const [cssCode, setCssCode] = useState(DEFAULT_CODE.css);
   const isWebLanguage = language === "html" || language === "css";
   const [webTab, setWebTab] = useState<"html" | "css">("html");
-
   const [currentProjectId, setCurrentProjectId] = useState<number | null>(projectId ? Number(projectId) : null);
-
-  useEffect(() => {
-    if (appliedCodeRef.current && code !== appliedCodeRef.current) {
-      setCode(appliedCodeRef.current);
-    }
-  }, [code]);
 
   const handleCodeChange = useCallback((newCode: string) => {
     appliedCodeRef.current = null;
@@ -287,31 +283,18 @@ function EditorPage({ initialLanguage }: { initialLanguage?: string } = {}) {
     setShowTerminal(true);
     setIsRunning(true);
     setOutput([]);
-
     try {
       const res = await fetch("/api/execute", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(user?.email ? { "x-user-email": user.email } : {}),
-        },
-        body: JSON.stringify({
-          language,
-          code,
-          stdinInput: values.join("\n"),
-          inputPrompts: inputPrompts.map((item) => item.prompt),
-        }),
+        headers: { "Content-Type": "application/json", ...(user?.email ? { "x-user-email": user.email } : {}) },
+        body: JSON.stringify({ language, code, stdinInput: values.join("\n"), inputPrompts: inputPrompts.map((item) => item.prompt) }),
       });
       const data = await res.json();
       if (data.error) setOutput([data.error, ...(data.output || [])]);
       else if (data.output && data.output.length > 0) setOutput(data.output);
       else setOutput(["(no output)"]);
-    } catch (e: any) {
-      setOutput(["Error: " + e.message]);
-    } finally {
-      setIsRunning(false);
-      setInputPrompts([]);
-    }
+    } catch (e: any) { setOutput(["Error: " + e.message]); }
+    finally { setIsRunning(false); setInputPrompts([]); }
   }, [user, language, code, inputPrompts]);
 
   const handleRun = useCallback(async () => {
@@ -357,7 +340,7 @@ function EditorPage({ initialLanguage }: { initialLanguage?: string } = {}) {
     setShowTerminal(false);
   }, [language]);
 
-  const handleSave = useCallback(async () => {
+  const handleSave = useCallback(async (selectedName?: string) => {
     if (!user) {
       sessionStorage.setItem("codeiq_draft_code", code);
       sessionStorage.setItem("codeiq_draft_language", language);
@@ -369,16 +352,35 @@ function EditorPage({ initialLanguage }: { initialLanguage?: string } = {}) {
       setShowSavePrompt(true);
       return;
     }
+
+    if (!selectedName) {
+      setShowSavePrompt(true);
+      return;
+    }
+
+    const extension = FILE_EXTENSIONS[language] || ".txt";
+    const name = `${selectedName}${extension}`;
     const isWeb = language === "html" || language === "css";
-    const name = isWeb ? projectName : `${projectName}.${FILE_NAMES[language]?.split(".")[1] || "txt"}`;
+    const body: Record<string, unknown> = {
+      email: user.email,
+      name,
+      language,
+      code,
+      ...(isWeb ? { htmlCode, cssCode } : {}),
+    };
+
     try {
       const method = currentProjectId ? "PUT" : "POST";
-      const body: Record<string, unknown> = { email: user.email, name, language, code };
       if (currentProjectId) body.projectId = currentProjectId;
       const res = await fetch("/api/projects", { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const data = await res.json();
       if (res.ok) {
-        if (!currentProjectId && data.project) { setCurrentProjectId(data.project.id); window.history.replaceState(null, "", `/editor?id=${data.project.id}`); }
+        setProjectName(selectedName);
+        setShowSavePrompt(false);
+        if (!currentProjectId && data.project) {
+          setCurrentProjectId(data.project.id);
+          window.history.replaceState(null, "", `/editor?id=${data.project.id}`);
+        }
         toast("Project saved successfully!", "success");
       } else toast(data.error || "Failed to save", "error");
     } catch { toast("Failed to save", "error"); }
@@ -424,7 +426,7 @@ function EditorPage({ initialLanguage }: { initialLanguage?: string } = {}) {
       <div ref={containerRef} style={{ flex: 1, display: "flex", flexDirection: isMobile ? "column" : "row", padding: isMobile ? "8px" : "16px 24px 24px", gap: isMobile ? "8px" : "0", minHeight: 0, overflow: "hidden" }}>
         {isWebLanguage ? (
           <div style={{ width: "100%", display: "flex", flexDirection: "column", border: `1px solid ${theme.border}`, borderRadius: "8px", overflow: "hidden", minHeight: isMobile ? "auto" : "400px", flex: isMobile ? "none" : 1 }}>
-            <EditorToolbar language={language} onLanguageChange={handleLanguageChange} onRun={handleRun} onSave={handleSave} isRunning={isRunning} onTemplates={() => setShowTemplates(true)} />
+            <EditorToolbar language={language} onLanguageChange={handleLanguageChange} onRun={handleRun} onSave={() => setShowSavePrompt(true)} isRunning={isRunning} onTemplates={() => setShowTemplates(true)} />
             {isMobile ? (
               <>
                 <div style={{ display: "flex", borderBottom: `1px solid ${theme.border}`, backgroundColor: theme.panel }}>
@@ -447,63 +449,15 @@ function EditorPage({ initialLanguage }: { initialLanguage?: string } = {}) {
           </div>
         ) : (
           <>
-            <div
-              style={{
-                width: isMobile ? "100%" : `${splitPos}%`,
-                flex: isMobile ? (showOutputPanel ? "0 0 60%" : 1) : "none",
-                minWidth: 0,
-                minHeight: 0,
-                display: "flex",
-                flexDirection: "column",
-                border: `1px solid ${theme.border}`,
-                borderRadius: "8px",
-                overflow: "hidden",
-                height: isMobile ? "auto" : "100%",
-              }}
-            >
-              <EditorToolbar language={language} onLanguageChange={handleLanguageChange} onRun={handleRun} onSave={handleSave} isRunning={isRunning} onTemplates={() => setShowTemplates(true)} />
+            <div style={{ width: isMobile ? "100%" : `${splitPos}%`, flex: isMobile ? (showOutputPanel ? "0 0 60%" : 1) : "none", minWidth: 0, minHeight: 0, display: "flex", flexDirection: "column", border: `1px solid ${theme.border}`, borderRadius: "8px", overflow: "hidden", height: isMobile ? "auto" : "100%" }}>
+              <EditorToolbar language={language} onLanguageChange={handleLanguageChange} onRun={handleRun} onSave={() => setShowSavePrompt(true)} isRunning={isRunning} onTemplates={() => setShowTemplates(true)} />
               <div style={{ flex: 1, minHeight: 0 }}><CodeEditor language={language} value={code} onChange={handleCodeChange} /></div>
             </div>
-
             {showOutputPanel && (
               <>
-                {!isMobile && (
-                  <div
-                    onMouseDown={handleDragStart}
-                    title="Drag to resize"
-                    style={{
-                      width: "8px",
-                      flexShrink: 0,
-                      cursor: "col-resize",
-                      backgroundColor: theme.bg,
-                      borderLeft: `1px solid ${theme.border}`,
-                      borderRight: `1px solid ${theme.border}`,
-                    }}
-                  />
-                )}
-                <div
-                  style={{
-                    width: isMobile ? "100%" : `${100 - splitPos}%`,
-                    flex: isMobile ? "0 0 40%" : 1,
-                    minWidth: 0,
-                    minHeight: isMobile ? "220px" : 0,
-                    border: `1px solid ${theme.border}`,
-                    borderRadius: "8px",
-                    overflow: "hidden",
-                    backgroundColor: theme.panel,
-                  }}
-                >
-                  <OutputPanel
-                    output={output}
-                    isRunning={isRunning}
-                    inputFields={inputPrompts}
-                    onRunWithInput={handleRunWithInput}
-                    onClear={() => {
-                      setOutput([]);
-                      setInputPrompts([]);
-                      setShowTerminal(false);
-                    }}
-                  />
+                {!isMobile && <div onMouseDown={handleDragStart} title="Drag to resize" style={{ width: "8px", flexShrink: 0, cursor: "col-resize", backgroundColor: theme.bg, borderLeft: `1px solid ${theme.border}`, borderRight: `1px solid ${theme.border}` }} />}
+                <div style={{ width: isMobile ? "100%" : `${100 - splitPos}%`, flex: isMobile ? "0 0 40%" : 1, minWidth: 0, minHeight: isMobile ? "220px" : 0, border: `1px solid ${theme.border}`, borderRadius: "8px", overflow: "hidden", backgroundColor: theme.panel }}>
+                  <OutputPanel output={output} isRunning={isRunning} inputFields={inputPrompts} onRunWithInput={handleRunWithInput} onClear={() => { setOutput([]); setInputPrompts([]); setShowTerminal(false); }} />
                 </div>
               </>
             )}
@@ -512,27 +466,9 @@ function EditorPage({ initialLanguage }: { initialLanguage?: string } = {}) {
       </div>
 
       {showTemplates && (
-        <TemplateSelector
-          language={language}
-          onSelect={(templateCode, lang) => {
-            appliedCodeRef.current = templateCode;
-            setLanguage(lang);
-            setCode(templateCode);
-            if (lang === "html") {
-              setHtmlCode(templateCode);
-              setWebTab("html");
-            } else if (lang === "css") {
-              setCssCode(templateCode);
-              setWebTab("css");
-            }
-            setOutput([]);
-            setShowTerminal(false);
-          }}
-          onClose={() => setShowTemplates(false)}
-        />
+        <TemplateSelector language={language} onSelect={(templateCode, lang) => { appliedCodeRef.current = templateCode; setLanguage(lang); setCode(templateCode); if (lang === "html") { setHtmlCode(templateCode); setWebTab("html"); } else if (lang === "css") { setCssCode(templateCode); setWebTab("css"); } setOutput([]); setShowTerminal(false); }} onClose={() => setShowTemplates(false)} />
       )}
 
-      {/* The remaining share/save/agent UI stays unchanged in the deployed component. */}
       {showShare && (
         <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }} onClick={() => setShowShare(false)}>
           <div style={{ backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "12px", padding: isMobile ? "20px" : "28px", width: "100%", maxWidth: "420px", margin: isMobile ? "16px" : "0" }} onClick={(e) => e.stopPropagation()}>
@@ -543,7 +479,14 @@ function EditorPage({ initialLanguage }: { initialLanguage?: string } = {}) {
           </div>
         </div>
       )}
-      <SavePromptModal isOpen={showSavePrompt} onClose={() => setShowSavePrompt(false)} />
+      <SavePromptModal
+        isOpen={showSavePrompt}
+        isAuthenticated={!!user}
+        defaultName={projectName}
+        extension={FILE_EXTENSIONS[language] || ".txt"}
+        onClose={() => setShowSavePrompt(false)}
+        onSave={(fileName) => handleSave(fileName)}
+      />
     </div>
   );
 }
