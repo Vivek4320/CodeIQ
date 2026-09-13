@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { X, Search, Code2, FileCode, Layout, Database, Server, Cpu, Braces } from "lucide-react";
 import { useTheme } from "@/components/landing/ThemeContext";
 import { templates, type Template } from "@/data/templates";
+import { basicTemplates } from "@/data/basicTemplates";
 
 interface TemplateSelectorProps {
   language: string;
@@ -44,9 +45,17 @@ export default function TemplateSelector({ language, onSelect, onClose }: Templa
 
   useEffect(() => setSelectedLang(language), [language]);
 
-  const dynamicTemplates = useMemo<Template[]>(() => {
-    const existingLanguages = new Set(templates.map((template) => template.language));
-    return registryLanguages
+  const allTemplates = useMemo(() => {
+    const combined = [...basicTemplates, ...templates];
+    const seen = new Set<string>();
+    const unique = combined.filter((template) => {
+      if (seen.has(template.id)) return false;
+      seen.add(template.id);
+      return true;
+    });
+
+    const existingLanguages = new Set(unique.map((template) => template.language));
+    const dynamicStarters = registryLanguages
       .filter((item) => item.id && item.sampleCode && !existingLanguages.has(item.id))
       .map((item) => ({
         id: `registry-${item.id}-starter`,
@@ -56,9 +65,10 @@ export default function TemplateSelector({ language, onSelect, onClose }: Templa
         description: `Starter code from the central ${item.name} language registry`,
         code: item.sampleCode || "",
       }));
+
+    return [...unique, ...dynamicStarters];
   }, [registryLanguages]);
 
-  const allTemplates = useMemo(() => [...templates, ...dynamicTemplates], [dynamicTemplates]);
   const languages = useMemo(() => {
     const registryOrder = registryLanguages.map((item) => item.id).filter(Boolean);
     const templateLanguages = [...new Set(allTemplates.map((template) => template.language))];
