@@ -40,6 +40,7 @@ const DEFAULT_CODE: Record<string, string> = {
   ruby: `# Welcome to CodeIQ!\nputs "Hello, World!"`,
   haskell: `-- Welcome to CodeIQ!\nmain :: IO ()\nmain = putStrLn "Hello, World!"`,
   c: `#include <stdio.h>\n\nint main() {\n  printf("Hello, World!\\n");\n  return 0;\n}`,
+  php: `<?php\n\necho "Hello, World!";\n?>`,
   html: `<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="UTF-8">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n  <title>My Web Page</title>\n</head>\n<body>\n  <h1>Hello, World!</h1>\n  <p>Start building your webpage here.</p>\n</body>\n</html>`,
   css: `/* CodeIQ CSS Editor */\n\n* {\n  box-sizing: border-box;\n}\n\nbody {\n  margin: 0;\n  font-family: Arial, sans-serif;\n  padding: 40px;\n}`,
 };
@@ -55,6 +56,7 @@ const FILE_NAMES: Record<string, string> = {
   ruby: "main.rb",
   haskell: "main.hs",
   c: "main.c",
+  php: "index.php",
   html: "index.html",
   css: "style.css",
 };
