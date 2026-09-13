@@ -5,6 +5,7 @@ import { X, Search, Code2, FileCode, Layout, Database, Server, Cpu, Braces } fro
 import { useTheme } from "@/components/landing/ThemeContext";
 import { templates, type Template } from "@/data/templates";
 import { basicTemplates } from "@/data/basicTemplates";
+import { generateRegistryTemplates, type RegistryTemplateLanguage } from "@/data/registryTemplateFactory";
 
 interface TemplateSelectorProps {
   language: string;
@@ -12,12 +13,7 @@ interface TemplateSelectorProps {
   onClose: () => void;
 }
 
-interface RegistryLanguage {
-  id: string;
-  name: string;
-  sampleCode?: string;
-  category?: string;
-}
+interface RegistryLanguage extends RegistryTemplateLanguage {}
 
 const CATEGORY_ICONS: Record<string, any> = {
   Basics: Braces, API: Server, Async: Cpu, OOP: Code2, Advanced: Code2,
@@ -54,19 +50,21 @@ export default function TemplateSelector({ language, onSelect, onClose }: Templa
       return true;
     });
 
+    // Central registry languages automatically receive their standard beginner
+    // templates. Languages with dedicated templates keep those templates and
+    // are not duplicated. Unknown/new languages fall back to their registry starter.
     const existingLanguages = new Set(unique.map((template) => template.language));
-    const dynamicStarters = registryLanguages
-      .filter((item) => item.id && item.sampleCode && !existingLanguages.has(item.id))
-      .map((item) => ({
-        id: `registry-${item.id}-starter`,
-        name: `${item.name} Starter`,
-        language: item.id,
-        category: item.category || "Basics",
-        description: `Starter code from the central ${item.name} language registry`,
-        code: item.sampleCode || "",
-      }));
+    const dynamicTemplates = registryLanguages
+      .filter((item) => item.id && !existingLanguages.has(item.id))
+      .flatMap((item) => generateRegistryTemplates(item));
 
-    return [...unique, ...dynamicStarters];
+    const all = [...unique, ...dynamicTemplates];
+    const finalSeen = new Set<string>();
+    return all.filter((template) => {
+      if (finalSeen.has(template.id)) return false;
+      finalSeen.add(template.id);
+      return true;
+    });
   }, [registryLanguages]);
 
   const languages = useMemo(() => {
