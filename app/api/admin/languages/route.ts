@@ -49,6 +49,25 @@ export async function POST(req: Request) {
     if (body.execution_type === "judge0" && !Number.isInteger(Number(body.language_id))) return NextResponse.json({ error: "Judge0 languages require a numeric Language ID" }, { status: 400 });
 
     const values: any[] = [body.name.trim(), body.slug.trim(), body.extension.replace(/^\./, "").trim(), body.editor_key.trim(), body.execution_type, body.language_id == null || body.language_id === "" ? null : Number(body.language_id), body.title || `Online ${body.name} Compiler – Run ${body.name} Code Online | CodeIQ`, body.description || `Write and run ${body.name} code online with CodeIQ.`, body.h1 || `Online ${body.name} Compiler`, body.version.trim(), body.sample_code, JSON.stringify(body.use_cases || []), JSON.stringify(body.faq_items || []), JSON.stringify(body.related_slugs || []), body.stdin_support === true, body.category || "general", Number(body.sort_order || 0), true];
+
+    const existing = await query("SELECT id, is_active FROM languages WHERE slug = $1 LIMIT 1", [body.slug.trim()]);
+    if (existing.length) {
+      if (existing[0].is_active) {
+        return NextResponse.json({ error: "A language with this slug already exists" }, { status: 409 });
+      }
+
+      const updateValues = [...values];
+      const setClauses = [
+        "name = $1", "slug = $2", "extension = $3", "editor_key = $4", "execution_type = $5",
+        "language_id = $6", "title = $7", "description = $8", "h1 = $9", "version = $10",
+        "sample_code = $11", "use_cases = $12", "faq_items = $13", "related_slugs = $14",
+        "stdin_support = $15", "category = $16", "sort_order = $17", "is_active = $18",
+      ];
+      updateValues.push(existing[0].id);
+      await query(`UPDATE languages SET ${setClauses.join(", ")} WHERE id = $19`, updateValues);
+      return NextResponse.json({ message: "Language reactivated" }, { status: 200 });
+    }
+
     await query(`INSERT INTO languages (name, slug, extension, editor_key, execution_type, language_id, title, description, h1, version, sample_code, use_cases, faq_items, related_slugs, stdin_support, category, sort_order, is_active)
       VALUES (${values.map((_, i) => `$${i + 1}`).join(", ")})`, values);
     return NextResponse.json({ message: "Language added" }, { status: 201 });
