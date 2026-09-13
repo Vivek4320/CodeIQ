@@ -13,6 +13,7 @@ export interface RegistryLanguage extends CompilerLanguage {
 const LEGACY_JUDGE0_IDS: Record<string, number | null> = {
   c: 50, cpp: 54, java: 62, javascript: 63, python: 71,
   go: 60, ruby: 72, rust: 73, typescript: 74, haskell: 85,
+  php: 68,
   html: null, css: null,
 };
 
@@ -36,10 +37,16 @@ export function staticToRegistry(lang: CompilerLanguage): RegistryLanguage {
 }
 
 function rowToLanguage(row: any): RegistryLanguage {
+  const editorKey = row.editor_key || row.slug;
+  const configuredLanguageId = row.language_id == null ? null : Number(row.language_id);
+  const languageId = editorKey === "php"
+    ? 68
+    : (configuredLanguageId ?? LEGACY_JUDGE0_IDS[editorKey] ?? null);
+
   return {
     slug: row.slug,
     name: row.name,
-    editorKey: row.editor_key || row.slug,
+    editorKey,
     title: row.title || `Online ${row.name} Compiler – Run ${row.name} Code Online | CodeIQ`,
     description: row.description || `Write and run ${row.name} code online with CodeIQ.`,
     extension: row.extension,
@@ -50,7 +57,7 @@ function rowToLanguage(row: any): RegistryLanguage {
     useCases: parseJson<string[]>(row.use_cases, []),
     faqItems: parseJson<{ q: string; a: string }[]>(row.faq_items, []),
     relatedSlugs: parseJson<string[]>(row.related_slugs, []),
-    languageId: row.language_id == null ? null : Number(row.language_id),
+    languageId,
     stdinSupport: Boolean(row.stdin_support),
     category: row.category || "general",
     sortOrder: Number(row.sort_order || 0),
