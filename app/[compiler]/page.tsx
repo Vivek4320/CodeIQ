@@ -17,18 +17,61 @@ export async function generateMetadata({ params }: { params: Promise<{ compiler:
   const { compiler } = await params;
   const lang = await getLanguageByRegistrySlug(compiler);
   if (!lang) return {};
+
+  const language = lang.name.toLowerCase();
   const canonicalUrl = `${BASE_URL}/${lang.slug}`;
+  const keywordVariants = [
+    `online ${language} compiler`,
+    `${language} compiler`,
+    `${language} compiler online`,
+    `run ${language} code online`,
+    `${language} code online`,
+    `${language} editor online`,
+    `online compiler for ${language}`,
+    `free ${language} compiler`,
+  ];
+
+  if (lang.editorKey === "c") {
+    keywordVariants.push("online c code compiler", "c programming online compiler", "c language online compiler", "gcc compiler online");
+  }
+  if (lang.editorKey === "python") {
+    keywordVariants.push("python online compiler", "python code editor online", "python web compiler", "run python code online");
+  }
+  if (lang.editorKey === "java") {
+    keywordVariants.push("java online compiler", "java code online compiler", "compile java program online", "execute java code online");
+  }
+
   return {
     title: lang.title,
     description: lang.description,
-    keywords: [
-      `online ${lang.name.toLowerCase()} compiler`, `${lang.name.toLowerCase()} compiler`,
-      `run ${lang.name.toLowerCase()} online`, `${lang.name.toLowerCase()} editor online`,
-      `${lang.name.toLowerCase()} code online`, `free ${lang.name.toLowerCase()} compiler`,
-    ],
+    keywords: Array.from(new Set(keywordVariants)),
+    category: "technology",
+    creator: "CodeIQ",
+    publisher: "CodeIQ",
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+        "max-video-preview": -1,
+      },
+    },
     alternates: { canonical: canonicalUrl },
-    openGraph: { title: lang.title, description: lang.description, url: canonicalUrl, siteName: "CodeIQ", type: "website" },
-    twitter: { card: "summary", title: lang.title, description: lang.description },
+    openGraph: {
+      title: lang.title,
+      description: lang.description,
+      url: canonicalUrl,
+      siteName: "CodeIQ",
+      type: "website",
+    },
+    twitter: {
+      card: "summary",
+      title: lang.title,
+      description: lang.description,
+    },
   };
 }
 
@@ -39,7 +82,8 @@ export default async function CompilerPage({ params }: { params: Promise<{ compi
 
   const structuredData = [
     {
-      "@context": "https://schema.org", "@type": "BreadcrumbList",
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
       itemListElement: [
         { "@type": "ListItem", position: 1, name: "Home", item: BASE_URL },
         { "@type": "ListItem", position: 2, name: "Online Code Compiler", item: `${BASE_URL}/online-code-compiler` },
@@ -47,12 +91,42 @@ export default async function CompilerPage({ params }: { params: Promise<{ compi
       ],
     },
     {
-      "@context": "https://schema.org", "@type": "SoftwareApplication",
-      name: `CodeIQ — ${lang.h1}`, url: `${BASE_URL}/${lang.slug}`, description: lang.description,
-      applicationCategory: "DeveloperApplication", operatingSystem: "Web",
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      name: `CodeIQ — ${lang.h1}`,
+      url: `${BASE_URL}/${lang.slug}`,
+      description: lang.description,
+      applicationCategory: "DeveloperApplication",
+      operatingSystem: "Web",
+      featureList: [
+        `Online ${lang.name} code editor`,
+        `Run ${lang.name} code online`,
+        "No installation required",
+        "Browser-based development environment",
+      ],
       offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: lang.faqItems.map((item) => ({
+        "@type": "Question",
+        name: item.q,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: item.a,
+        },
+      })),
     },
   ];
 
-  return <><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} /><CompilerLanding lang={lang} /></>;
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
+      <CompilerLanding lang={lang} />
+    </>
+  );
 }
