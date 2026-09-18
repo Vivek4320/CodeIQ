@@ -76,7 +76,11 @@ function mergeBuiltInLanguage(
   return {
     ...fallback,
     ...dbLanguage,
-    editorKey: dbLanguage.editorKey || fallback.editorKey,
+    // Built-in language URLs are canonical and must not change if a legacy
+    // database row uses an editor key/slug such as "python" instead of
+    // the public page slug "python-compiler".
+    slug: fallback.slug,
+    editorKey: fallback.editorKey,
     executionType: dbLanguage.executionType || fallback.executionType,
     languageId: dbLanguage.languageId ?? fallback.languageId,
     extension: dbLanguage.extension || fallback.extension,
