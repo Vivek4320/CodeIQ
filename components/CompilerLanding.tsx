@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { Instrument_Serif, Inter, JetBrains_Mono } from "next/font/google";
 import { useTheme } from "@/components/landing/ThemeContext";
@@ -35,6 +35,43 @@ function executionLabel(type: CompilerLanguage["executionType"]): string {
   return "Judge0 Execution Engine (sandboxed server)";
 }
 
+/** SEO-focused content for the highest-impression language pages. */
+const SEO_CONTENT: Record<string, { intro: string; topics: string[] }> = {
+  c: {
+    intro:
+      "CodeIQ provides a browser-based C compiler for writing, compiling, and testing C programs without installing GCC on your computer. It is useful for learning C fundamentals, practising algorithms, and quickly checking program output.",
+    topics: [
+      "C variables, data types, and operators",
+      "if/else statements and switch cases",
+      "for, while, and do-while loops",
+      "functions, arrays, strings, and pointers",
+      "structs and dynamic memory allocation",
+    ],
+  },
+  python: {
+    intro:
+      "CodeIQ provides an online Python compiler for writing, running, and testing Python programs directly in your browser. You can practise Python syntax, algorithms, data structures, and standard-library code without installing Python locally.",
+    topics: [
+      "Python variables, data types, and operators",
+      "if/elif/else statements and loops",
+      "functions, lists, tuples, sets, and dictionaries",
+      "strings, modules, and exception handling",
+      "algorithms and data-structure practice",
+    ],
+  },
+  java: {
+    intro:
+      "CodeIQ provides an online Java compiler for writing, compiling, and testing Java programs in your browser. It is designed for practising Java syntax, object-oriented programming, collections, algorithms, and coursework without installing a local JDK.",
+    topics: [
+      "Java variables, data types, and operators",
+      "if/else, switch, and loop statements",
+      "methods, arrays, strings, and classes",
+      "object-oriented programming concepts",
+      "Java Collections and algorithm practice",
+    ],
+  },
+};
+
 /** Section heading styles */
 function SectionH2({
   children,
@@ -59,6 +96,30 @@ export default function CompilerLanding({ lang }: { lang: CompilerLanguage }) {
   const [code, setCode] = useState(lang.sampleCode);
   const [output, setOutput] = useState<string[]>([]);
   const [isRunning, setIsRunning] = useState(false);
+  const [registryLanguages, setRegistryLanguages] = useState<Array<{ id: string; name: string; pageSlug: string }>>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/languages", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled && Array.isArray(data?.languages)) {
+          setRegistryLanguages(
+            data.languages
+              .filter((language: any) => language?.pageSlug)
+              .map((language: any) => ({
+                id: String(language.id),
+                name: String(language.name),
+                pageSlug: String(language.pageSlug),
+              }))
+          );
+        }
+      })
+      .catch(() => {
+        // Keep the built-in related-language links if the registry request fails.
+      });
+    return () => { cancelled = true; };
+  }, []);
 
   const handleRun = useCallback(async () => {
     setIsRunning(true);
@@ -86,10 +147,19 @@ export default function CompilerLanding({ lang }: { lang: CompilerLanguage }) {
   }, [code, lang.editorKey]);
 
   /** Related languages for the "Explore More" section */
-  const relatedLanguages = lang.relatedSlugs
-    .map((slug) => compilerLanguages.find((l) => l.slug === slug))
-    .filter(Boolean) as CompilerLanguage[];
+  const relatedLanguages = registryLanguages.length
+    ? registryLanguages
+        .filter((language) => language.pageSlug !== lang.slug)
+        .slice(0, 11)
+        .map((language) => ({
+          slug: language.pageSlug,
+          h1: `Online ${language.name} ${language.name === "HTML" || language.name === "CSS" ? "Editor" : "Compiler"}`,
+        }))
+    : lang.relatedSlugs
+        .map((slug) => compilerLanguages.find((l) => l.slug === slug))
+        .filter(Boolean) as CompilerLanguage[];
 
+  const seoContent = SEO_CONTENT[lang.editorKey.toLowerCase()];
   const isPreview = lang.executionType === "live-preview";
 
   return (
@@ -414,6 +484,40 @@ export default function CompilerLanding({ lang }: { lang: CompilerLanguage }) {
           </div>
         </section>
 
+        {/* ── Language-specific SEO content ─────────────────────── */}
+        <section style={{ marginBottom: "48px" }}>
+          <SectionH2 theme={theme}>
+            About the Online {lang.name} {isPreview ? "Editor" : "Compiler"}
+          </SectionH2>
+          <p
+            className="font-body"
+            style={{
+              color: theme.muted,
+              lineHeight: 1.75,
+              fontSize: "15px",
+              maxWidth: "760px",
+              marginBottom: "18px",
+            }}
+          >
+            {seoContent?.intro ??
+              `CodeIQ provides an online ${lang.name} environment for writing, testing, and exploring ${lang.name} code directly in your browser. Use the editor to practise syntax, experiment with examples, and check your code without setting up a local development environment.`}
+          </p>
+          <h3
+            className="font-body"
+            style={{ fontSize: "16px", fontWeight: 600, color: theme.text, margin: "0 0 10px" }}
+          >
+            Common {lang.name} topics to practise
+          </h3>
+          <ul
+            className="font-body"
+            style={{ paddingLeft: "20px", color: theme.muted, lineHeight: 1.9, fontSize: "15px", margin: 0 }}
+          >
+            {(seoContent?.topics ?? lang.useCases).map((topic) => (
+              <li key={topic}>{topic}</li>
+            ))}
+          </ul>
+        </section>
+
         {/* ── Use cases ─────────────────────────────────────────── */}
         <section style={{ marginBottom: "48px" }}>
           <SectionH2 theme={theme}>
@@ -506,7 +610,7 @@ export default function CompilerLanding({ lang }: { lang: CompilerLanguage }) {
               marginBottom: "20px",
             }}
           >
-            CodeIQ supports 12 programming languages. Try another one:
+            Explore another language or editor from the CodeIQ online development toolkit:
           </p>
           <div
             style={{
