@@ -19,10 +19,17 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const siteUrl = "https://code-iq-ai.vercel.app";
+
 export const metadata: Metadata = {
-  title: "CodeIQ — Online Code Compiler & Editor | 12 Languages",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "Free Online Code Compiler & AI Code Editor | CodeIQ",
+    template: "%s | CodeIQ",
+  },
   description:
-    "Write, compile and run code online with CodeIQ. Free browser-based IDE supporting Python, JavaScript, TypeScript, Java, C, C++, Go, Rust, Ruby, Haskell, HTML and CSS. No signup needed.",
+    "Write, run, and understand code online with CodeIQ, a browser-based code editor and compiler for 12 programming languages with AI-powered coding assistance.",
+  applicationName: "CodeIQ",
   keywords: [
     "online compiler",
     "online code editor",
@@ -43,28 +50,42 @@ export const metadata: Metadata = {
     "haskell compiler",
     "html editor",
     "css editor",
+    "AI coding assistant",
   ],
   alternates: {
-    canonical: "https://code-iq-ai.vercel.app",
+    canonical: "/",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
   },
   openGraph: {
-    title: "CodeIQ — Online Code Compiler & Editor | 12 Languages",
+    title: "Free Online Code Compiler & AI Code Editor | CodeIQ",
     description:
-      "Write and run code online for Python, JavaScript, Java, C++, Go, Rust, Ruby and more. Free browser-based compiler — no signup needed.",
-    url: "https://code-iq-ai.vercel.app",
+      "Write, run, and understand code in your browser with CodeIQ. Explore 12 programming languages and AI-powered coding assistance.",
+    url: siteUrl,
     siteName: "CodeIQ",
+    locale: "en_US",
     type: "website",
   },
   twitter: {
     card: "summary",
-    title: "CodeIQ — Online Code Compiler & Editor",
+    title: "Free Online Code Compiler & AI Code Editor | CodeIQ",
     description:
-      "Run Python, JavaScript, Java, C++, Go, Rust and 6 more languages directly in your browser. Free online compiler.",
+      "Write, run, and understand code online with CodeIQ's browser-based compiler and AI coding assistant.",
   },
   verification: {
     google: "iYCIJ-Qy5f6rKexF-iMawziYVw0-7wHPzef7mP5RxlQ",
   },
 };
+
 export const viewport: Viewport = {
   themeColor: "#000000",
   width: "device-width",
@@ -97,9 +118,9 @@ export default function RootLayout({
                 "@context": "https://schema.org",
                 "@type": "SoftwareApplication",
                 name: "CodeIQ",
-                url: "https://code-iq-ai.vercel.app",
+                url: siteUrl,
                 description:
-                  "A free, browser-based online code compiler and editor supporting Python, JavaScript, TypeScript, Java, C, C++, Go, Rust, Ruby, Haskell, HTML and CSS.",
+                  "A browser-based online code compiler and editor supporting 12 programming languages, with AI-powered coding assistance.",
                 applicationCategory: "DeveloperApplication",
                 operatingSystem: "Web",
                 offers: {
@@ -112,8 +133,9 @@ export default function RootLayout({
                 "@context": "https://schema.org",
                 "@type": "Organization",
                 name: "CodeIQ",
-                url: "https://code-iq-ai.vercel.app",
-                description: "CodeIQ provides a free multi-language online code compiler and editor.",
+                url: siteUrl,
+                description:
+                  "CodeIQ provides a browser-based multi-language online code compiler and editor.",
               },
             ]),
           }}
@@ -125,9 +147,7 @@ export default function RootLayout({
           <ThemeStyle />
           <AuthProvider>
             <ToastProvider>
-              <PageTransition>
-                {children}
-              </PageTransition>
+              <PageTransition>{children}</PageTransition>
             </ToastProvider>
             <FeedbackTrigger />
           </AuthProvider>
