@@ -3,16 +3,36 @@ import { getLanguageRegistry } from "@/lib/languageRegistry";
 
 export const revalidate = 3600;
 
+const BASE_URL = "https://code-iq-ai.vercel.app";
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = "https://code-iq-ai.vercel.app";
   const languages = await getLanguageRegistry();
-  const now = new Date();
+
+  // Only list public, canonical pages. Avoid setting lastModified to the
+  // current build time because that would make unchanged pages look updated.
   return [
-    { url: baseUrl, lastModified: now, changeFrequency: "daily", priority: 1.0 },
-    { url: `${baseUrl}/online-code-compiler`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
+    {
+      url: BASE_URL,
+      changeFrequency: "weekly",
+      priority: 1,
+    },
+    {
+      url: `${BASE_URL}/online-code-compiler`,
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    {
+      url: `${BASE_URL}/features`,
+      changeFrequency: "monthly",
+      priority: 0.7,
+    },
+    {
+      url: `${BASE_URL}/docs`,
+      changeFrequency: "monthly",
+      priority: 0.7,
+    },
     ...languages.map((language) => ({
-      url: `${baseUrl}/${language.slug}`,
-      lastModified: now,
+      url: `${BASE_URL}/${language.slug}`,
       changeFrequency: "weekly" as const,
       priority: 0.8,
     })),
