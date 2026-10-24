@@ -42,7 +42,7 @@ export async function generateMetadata({ params }: { params: Promise<{ compiler:
   }
 
   return {
-    title: lang.title,
+    title: { absolute: lang.title },
     description: lang.description,
     keywords: Array.from(new Set(keywordVariants)),
     category: "technology",
