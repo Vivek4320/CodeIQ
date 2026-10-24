@@ -14,7 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const languages = await getLanguageRegistry();
   const names = languages.map((l) => l.name).join(", ");
   return {
-    title: "Online Code Compiler & Editor – Run Code Online | CodeIQ",
+    title: { absolute: "Online Code Compiler & Editor – Run Code Online | CodeIQ" },
     description: `Write, run and test code online with CodeIQ. Use dedicated compiler and editor pages for ${names}.`,
     keywords: ["online code compiler", "online compiler", "run code online", "code editor online", "online IDE", "browser compiler", "free online compiler", "multi-language compiler", ...languages.map((l) => `online ${l.name} compiler`)],
     alternates: { canonical: `${BASE_URL}/online-code-compiler` },
