@@ -31,9 +31,12 @@ interface AgentPanelProps {
 }
 
 const QUICK_ACTIONS = [
-  { label: "Explain", icon: Lightbulb, prompt: "Explain what this code does step by step" },
-  { label: "Fix Bug", icon: Bug, prompt: "Act as CodeIQ AI Error Detective. Diagnose the current editor code: identify the root cause and evidence, point to the exact line or smallest relevant snippet, explain why it fails, provide the smallest safe fix, and verify it by running the code when supported. Distinguish confirmed errors from suspected issues. Preserve unrelated code and return the complete corrected code." },
-  { label: "Optimize", icon: Zap, prompt: "Optimize this code for better performance" },
+  { label: "Fix my code", icon: Bug, prompt: "Act as CodeIQ AI Error Detective. Diagnose the current editor code: identify the root cause and evidence, point to the exact line or smallest relevant snippet, explain why it fails, provide the smallest safe fix, and verify it by running the code when supported. Distinguish confirmed errors from suspected issues. Preserve unrelated code and return the complete corrected code." },
+  { label: "Explain code", icon: Lightbulb, prompt: "Explain the current editor code step by step in beginner-friendly language. Describe what the important lines do and explain any unfamiliar concepts." },
+  { label: "Generate code", icon: Wrench, prompt: "Help me write code for my goal. First ask a brief clarifying question if my goal is not clear; otherwise generate a solution for the current programming language and explain how to use it." },
+  { label: "Optimize code", icon: Zap, prompt: "Review the current editor code and suggest meaningful improvements to performance, readability, and maintainability. Explain trade-offs and preserve existing behavior." },
+  { label: "Review code", icon: Check, prompt: "Review the current editor code for bugs, edge cases, readability, and security concerns. Prioritize findings by severity, explain evidence, and suggest targeted fixes. Do not claim you ran code unless it was actually executed." },
+  { label: "Write tests", icon: ChevronRight, prompt: "Create useful test cases for the current editor code, covering normal cases, edge cases, and likely failures. Explain how to run the tests in the current language." },
 ];
 
 function ToolIcon({ tool }: { tool: string }) {
@@ -591,35 +594,38 @@ export default function AgentPanel({ language, existingCode, onApplyAndRun, onCl
         {messages.length === 0 && (
           <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", padding: "24px 16px" }}>
             <div style={{
-              width: "36px", height: "36px", borderRadius: "8px",
-              backgroundColor: `${theme.accent}10`,
+              width: "44px", height: "44px", borderRadius: "12px",
+              backgroundColor: `${theme.accent}14`, border: `1px solid ${theme.accent}30`,
               display: "flex", alignItems: "center", justifyContent: "center",
               marginBottom: "14px",
             }}>
-              <Bot size={18} style={{ color: theme.accent }} />
+              <Bot size={22} style={{ color: theme.accent }} />
             </div>
             <p style={{ fontSize: "13px", fontWeight: 600, color: theme.text, margin: "0 0 4px" }}>
-              CodeIQ
+              What can I help you code today?
             </p>
-            <p style={{ fontSize: "12px", color: theme.faint, margin: "0 0 20px" }}>
-              Your AI coding assistant. Ask me anything!
+            <p style={{ fontSize: "12px", color: theme.faint, margin: "0 0 8px", textAlign: "center", lineHeight: 1.6, maxWidth: "270px" }}>
+              I’m CodeIQ AI, your coding assistant. I can explain code, find bugs, generate solutions, review code, and help you improve it.
             </p>
+            <span style={{ fontSize: "10px", color: theme.accent, backgroundColor: `${theme.accent}10`, borderRadius: "20px", padding: "4px 9px", marginBottom: "16px" }}>
+              Working with {language}
+            </span>
 
-            {/* Quick actions — clean flat list */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "4px", width: "100%", maxWidth: "260px" }}>
+            {/* Quick actions */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "7px", width: "100%", maxWidth: "300px" }}>
               {QUICK_ACTIONS.map((action) => (
                 <button key={action.label} onClick={() => handleSubmit(action.prompt)}
                   style={{
                     display: "flex", alignItems: "center", gap: "8px",
-                    padding: "8px 10px", borderRadius: "6px", fontSize: "12px",
-                    border: "none", backgroundColor: "transparent",
-                    color: theme.muted, cursor: "pointer", textAlign: "left",
+                    padding: "10px 9px", borderRadius: "8px", fontSize: "11px",
+                    border: `1px solid ${theme.border}`, backgroundColor: theme.bg,
+                    color: theme.muted, cursor: "pointer", textAlign: "left", minHeight: "40px",
                     transition: "all 0.15s ease",
                   }}
                   onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = `${theme.accent}08`; e.currentTarget.style.color = theme.text; }}
                   onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = theme.muted; }}
                 >
-                  <action.icon size={12} style={{ color: theme.faint, flexShrink: 0 }} />
+                  <action.icon size={13} style={{ color: theme.accent, flexShrink: 0 }} />
                   {action.label}
                 </button>
               ))}
@@ -684,7 +690,7 @@ export default function AgentPanel({ language, existingCode, onApplyAndRun, onCl
               onKeyDown={handleKeyDown}
               onFocus={() => setInputFocused(true)}
               onBlur={() => setInputFocused(false)}
-              placeholder="Ask CodeIQ anything..."
+              placeholder={`Ask your AI coding assistant about ${language}...`}
               rows={1}
               style={{
                 flex: 1, resize: "none", border: "none", outline: "none",
