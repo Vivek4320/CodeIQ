@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { getCompletionClient } from "@/lib/keyking";
 
 export async function POST(req: Request) {
   try {
@@ -49,17 +48,31 @@ Rules:
 
 Return JSON array:`;
 
-    // KeyKing handles provider routing with automatic fallback
-    const keyking = getCompletionClient();
+    // Call Groq directly for AI code completions.
+    const apiKey = process.env.GROQ_API_KEY;
+    if (!apiKey) return NextResponse.json({ completions: [] }, { status: 200 });
 
     try {
-      const data = await keyking.chat.completions.create({
-        model: "llama-3.3-70b-versatile",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.2,
-        max_tokens: 256,
+      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "openai/gpt-oss-120b",
+          messages: [{ role: "user", content: prompt }],
+          temperature: 0.2,
+          max_tokens: 256,
+        }),
       });
 
+      if (!response.ok) {
+        console.error("Groq completion API error:", response.status);
+        return NextResponse.json({ completions: [] }, { status: 200 });
+      }
+
+      const data = await response.json();
       const text = data.choices?.[0]?.message?.content?.trim();
       if (!text) return NextResponse.json({ completions: [] }, { status: 200 });
 
