@@ -8,13 +8,13 @@
 import { KeyKing, type KeyKingConfig, type Provider } from "keyking-sdk";
 
 const AGENT_ROUTING: { provider: Provider; model: string }[] = [
-  { provider: "Groq", model: "llama-3.3-70b-versatile" },
+  { provider: "Groq", model: "openai/gpt-oss-120b" },
   { provider: "Anthropic", model: "claude-3-5-sonnet-20241022" },
   { provider: "OpenAI", model: "gpt-4o" },
 ];
 
 const COMPLETION_ROUTING: { provider: Provider; model: string }[] = [
-  { provider: "Groq", model: "llama-3.3-70b-versatile" },
+  { provider: "Groq", model: "openai/gpt-oss-120b" },
   { provider: "OpenAI", model: "gpt-4o-mini" },
 ];
 
