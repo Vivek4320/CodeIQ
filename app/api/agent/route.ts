@@ -206,22 +206,30 @@ export async function POST(req: Request) {
               iteration: iteration + 1,
             }));
 
-            // Call Groq directly; no KeyKing vault or SDK required.
+            // Keep simple chat/greetings tool-free. Some model requests fail validation
+            // when tool schemas are sent even though the user is only greeting.
+            const latestUserText = String(messages[messages.length - 1]?.content || "").toLowerCase();
+            const needsTools = /\\b(run|execute|test|debug|fix|bug|calculate|math|calculator|read editor|inspect editor|explain this code|refactor)\\b/.test(latestUserText)
+              || /\\b(write|create|generate|build|implement)\\b.*\\b(code|function|class|program|script)\\b/.test(latestUserText);
+            const requestBody: Record<string, unknown> = {
+              model: "openai/gpt-oss-120b",
+              messages: conversation,
+              temperature: 0.3,
+              max_completion_tokens: 2048,
+              reasoning_effort: "low",
+            };
+            if (needsTools) {
+              requestBody.tools = AGENT_TOOLS;
+              requestBody.tool_choice = "auto";
+            }
+
             const providerResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
               method: "POST",
               headers: {
                 Authorization: `Bearer ${groqApiKey}`,
                 "Content-Type": "application/json",
               },
-              body: JSON.stringify({
-                model: "openai/gpt-oss-120b",
-                messages: conversation,
-                tools: AGENT_TOOLS,
-                tool_choice: "auto",
-                temperature: 0.3,
-                max_completion_tokens: 2048,
-                reasoning_effort: "low",
-              }),
+              body: JSON.stringify(requestBody),
             });
 
             if (!providerResponse.ok) {
