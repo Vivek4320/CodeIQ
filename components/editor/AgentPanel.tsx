@@ -178,7 +178,7 @@ function CopyButton({ text, theme }: { text: string; theme: any }) {
 /* ─── Formatted Text ─── */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function FormattedText({ text, theme }: { text: string; theme: any }) {
-  const lines = text.replace(/\\r\\n/g, "\\n").split("\\n");
+  const lines = text.replace(/\\r\n/g, "\n").split("\n");
   const blocks: { type: "heading" | "step" | "bullet" | "paragraph"; marker?: string; text: string; indent?: number }[] = [];
 
   for (let i = 0; i < lines.length; i++) {
@@ -213,7 +213,7 @@ function FormattedText({ text, theme }: { text: string; theme: any }) {
     // Treat unmarked lines following a step/bullet as a continuation rather than a new list item.
     const previous = blocks[blocks.length - 1];
     if (previous && (previous.type === "step" || previous.type === "bullet" || previous.type === "paragraph")) {
-      previous.text += "\\n" + line;
+      previous.text += "\n" + line;
     } else {
       blocks.push({ type: "paragraph", text: line });
     }
@@ -561,15 +561,15 @@ export default function AgentPanel({ language, existingCode, onApplyAndRun, onCl
         }
 
         streamBuffer += decoder.decode(value, { stream: true });
-        let boundary = streamBuffer.indexOf("\\n\\n");
+        let boundary = streamBuffer.indexOf("\n\n");
         while (boundary !== -1) {
           const frame = streamBuffer.slice(0, boundary);
           streamBuffer = streamBuffer.slice(boundary + 2);
           const data = frame
-            .split("\\n")
+            .split("\n")
             .filter((line) => line.startsWith("data:"))
             .map((line) => line.slice(5).trimStart())
-            .join("\\n")
+            .join("\n")
             .trim();
 
           if (data && data !== "[DONE]") {
@@ -579,15 +579,15 @@ export default function AgentPanel({ language, existingCode, onApplyAndRun, onCl
               console.error("Failed to parse CodeIQ agent event:", parseError);
             }
           }
-          boundary = streamBuffer.indexOf("\\n\\n");
+          boundary = streamBuffer.indexOf("\n\n");
         }
       }
 
       const remainingData = streamBuffer
-        .split("\\n")
+        .split("\n")
         .filter((line) => line.startsWith("data:"))
         .map((line) => line.slice(5).trimStart())
-        .join("\\n")
+        .join("\n")
         .trim();
       if (remainingData && remainingData !== "[DONE]") {
         try {
