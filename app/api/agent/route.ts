@@ -220,7 +220,7 @@ export async function POST(req: Request) {
                 tool_choice: "auto",
                 temperature: 0.3,
                 max_completion_tokens: 2048,
-                reasoning_format: "hidden",
+                include_reasoning: false,
               }),
             });
 
