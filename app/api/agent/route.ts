@@ -1,7 +1,16 @@
 import { NextResponse } from "next/server";
 import { AGENT_TOOLS, executeTool } from "@/lib/agent-tools";
-import { getAgentClient } from "@/lib/keyking";
-import type { ChatMessage, ToolCall } from "keyking-sdk";
+type ChatMessage = {
+  role: "system" | "user" | "assistant" | "tool";
+  content: string;
+  tool_call_id?: string;
+  tool_calls?: ToolCall[];
+};
+type ToolCall = {
+  id: string;
+  type: "function";
+  function: { name: string; arguments: string };
+};
 
 const MAX_ITERATIONS = 4;
 
@@ -142,7 +151,13 @@ export async function POST(req: Request) {
       }
     }
 
-    const keyking = getAgentClient();
+    const groqApiKey = process.env.GROQ_API_KEY;
+    if (!groqApiKey) {
+      return NextResponse.json(
+        { error: "GROQ_API_KEY is missing. Add it to your deployment environment and redeploy." },
+        { status: 500 },
+      );
+    }
 
     // Build conversation
     const conversation: ChatMessage[] = [
@@ -191,15 +206,33 @@ export async function POST(req: Request) {
               iteration: iteration + 1,
             }));
 
-            // Call LLM with tools via KeyKing
-            const data = await keyking.chat.completions.create({
-              model: "openai/gpt-oss-120b",
-              messages: conversation,
-              tools: AGENT_TOOLS,
-              tool_choice: "auto",
-              temperature: 0.3,
-              max_tokens: 2048,
+            // Call Groq directly; no KeyKing vault or SDK required.
+            const providerResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${groqApiKey}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                model: "openai/gpt-oss-120b",
+                messages: conversation,
+                tools: AGENT_TOOLS,
+                tool_choice: "auto",
+                temperature: 0.3,
+                max_tokens: 2048,
+              }),
             });
+
+            if (!providerResponse.ok) {
+              const providerError = await providerResponse.text();
+              console.error("Groq API error:", providerResponse.status, providerError);
+              if (providerResponse.status === 401) throw new Error("GROQ_INVALID_API_KEY");
+              if (providerResponse.status === 404) throw new Error("GROQ_MODEL_NOT_FOUND");
+              if (providerResponse.status === 429) throw new Error("GROQ_RATE_LIMIT");
+              throw new Error(`Groq API request failed (${providerResponse.status})`);
+            }
+
+            const data = await providerResponse.json();
 
             const assistantMessage = data.choices?.[0]?.message;
 
@@ -315,11 +348,11 @@ export async function POST(req: Request) {
           console.error("Agent provider error:", rawMessage);
           const lower = rawMessage.toLowerCase();
           let friendlyMessage = "CodeIQ AI could not get a response right now. Please try again in a moment.";
-          if (lower.includes("invalid_api_key") || lower.includes("incorrect api key") || lower.includes("401")) {
+          if (lower.includes("groq_invalid_api_key") || lower.includes("invalid_api_key") || lower.includes("incorrect api key") || lower.includes("401")) {
             friendlyMessage = "The AI provider's API key is invalid or expired. The site administrator needs to update the provider credentials in the deployment environment.";
-          } else if (lower.includes("model_not_found") || lower.includes("does not exist") || lower.includes("404")) {
+          } else if (lower.includes("groq_model_not_found") || lower.includes("model_not_found") || lower.includes("does not exist") || lower.includes("404")) {
             friendlyMessage = "The configured AI model is unavailable. The site administrator needs to select a currently supported model.";
-          } else if (lower.includes("rate limit") || lower.includes("429")) {
+          } else if (lower.includes("groq_rate_limit") || lower.includes("rate limit") || lower.includes("429")) {
             friendlyMessage = "The AI provider is temporarily rate-limited. Please wait a little and try again.";
           }
           controller.enqueue(sseEvent(encoder, { type: "error", content: friendlyMessage }));
