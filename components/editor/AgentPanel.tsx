@@ -496,73 +496,104 @@ export default function AgentPanel({ language, existingCode, onApplyAndRun, onCl
       }
 
       const decoder = new TextDecoder();
+      let streamBuffer = "";
+
+      const handleAgentEvent = (event: Record<string, unknown>) => {
+        if (event.type === "thinking") {
+          setMessages((prev) => {
+            const updated = [...prev];
+            const last = updated[updated.length - 1];
+            updated[updated.length - 1] = { ...last, thinking: String(event.content || "") };
+            return updated;
+          });
+        } else if (event.type === "tool") {
+          setMessages((prev) => {
+            const updated = [...prev];
+            const last = { ...updated[updated.length - 1] };
+            const steps = [...(last.toolSteps || [])];
+            const toolName = String(event.tool || "tool");
+            if (event.status === "running") {
+              steps.push({ tool: toolName, args: (event.args as Record<string, unknown>) || {}, status: "running" });
+            } else if (event.status === "done") {
+              for (let i = steps.length - 1; i >= 0; i--) {
+                if (steps[i].tool === toolName && steps[i].status === "running") {
+                  steps[i] = { ...steps[i], result: String(event.result || ""), status: "done" };
+                  break;
+                }
+              }
+            }
+            last.toolSteps = steps;
+            last.thinking = undefined;
+            updated[updated.length - 1] = last;
+            return updated;
+          });
+        } else if (event.type === "answer") {
+          setMessages((prev) => {
+            const updated = [...prev];
+            updated[updated.length - 1] = {
+              role: "agent",
+              content: String(event.review || event.plan || "Done."),
+              plan: typeof event.plan === "string" ? event.plan : undefined,
+              code: typeof event.code === "string" && event.code ? event.code : undefined,
+              review: typeof event.review === "string" ? event.review : undefined,
+              toolSteps: updated[updated.length - 1].toolSteps,
+            };
+            return updated;
+          });
+        } else if (event.type === "error") {
+          setMessages((prev) => {
+            const updated = [...prev];
+            updated[updated.length - 1] = {
+              role: "agent",
+              content: String(event.content || "Something went wrong."),
+              toolSteps: updated[updated.length - 1].toolSteps,
+            };
+            return updated;
+          });
+        }
+      };
+
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done) {
+          streamBuffer += decoder.decode();
+          break;
+        }
 
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split("\n");
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed || !trimmed.startsWith("data: ")) continue;
-          const data = trimmed.slice(6);
-          if (data === "[DONE]") continue;
+        streamBuffer += decoder.decode(value, { stream: true });
+        let boundary = streamBuffer.indexOf("\\n\\n");
+        while (boundary !== -1) {
+          const frame = streamBuffer.slice(0, boundary);
+          streamBuffer = streamBuffer.slice(boundary + 2);
+          const data = frame
+            .split("\\n")
+            .filter((line) => line.startsWith("data:"))
+            .map((line) => line.slice(5).trimStart())
+            .join("\\n")
+            .trim();
 
-          try {
-            const event = JSON.parse(data);
-
-            if (event.type === "thinking") {
-              setMessages((prev) => {
-                const updated = [...prev];
-                const last = updated[updated.length - 1];
-                updated[updated.length - 1] = { ...last, thinking: event.content };
-                return updated;
-              });
-            } else if (event.type === "tool") {
-              setMessages((prev) => {
-                const updated = [...prev];
-                const last = { ...updated[updated.length - 1] };
-                const steps = [...(last.toolSteps || [])];
-                if (event.status === "running") {
-                  steps.push({ tool: event.tool, args: event.args || {}, status: "running" });
-                } else if (event.status === "done") {
-                  for (let i = steps.length - 1; i >= 0; i--) {
-                    if (steps[i].tool === event.tool && steps[i].status === "running") {
-                      steps[i] = { ...steps[i], result: event.result, status: "done" };
-                      break;
-                    }
-                  }
-                }
-                last.toolSteps = steps;
-                last.thinking = undefined;
-                updated[updated.length - 1] = last;
-                return updated;
-              });
-            } else if (event.type === "answer") {
-              setMessages((prev) => {
-                const updated = [...prev];
-                updated[updated.length - 1] = {
-                  role: "agent",
-                  content: event.review || "Done.",
-                  plan: event.plan || undefined,
-                  code: event.code || undefined,
-                  review: event.review || undefined,
-                  toolSteps: updated[updated.length - 1].toolSteps,
-                };
-                return updated;
-              });
-            } else if (event.type === "error") {
-              setMessages((prev) => {
-                const updated = [...prev];
-                updated[updated.length - 1] = {
-                  role: "agent",
-                  content: event.content || "Something went wrong.",
-                  toolSteps: updated[updated.length - 1].toolSteps,
-                };
-                return updated;
-              });
+          if (data && data !== "[DONE]") {
+            try {
+              handleAgentEvent(JSON.parse(data) as Record<string, unknown>);
+            } catch (parseError) {
+              console.error("Failed to parse CodeIQ agent event:", parseError);
             }
-          } catch {}
+          }
+          boundary = streamBuffer.indexOf("\\n\\n");
+        }
+      }
+
+      const remainingData = streamBuffer
+        .split("\\n")
+        .filter((line) => line.startsWith("data:"))
+        .map((line) => line.slice(5).trimStart())
+        .join("\\n")
+        .trim();
+      if (remainingData && remainingData !== "[DONE]") {
+        try {
+          handleAgentEvent(JSON.parse(remainingData) as Record<string, unknown>);
+        } catch (parseError) {
+          console.error("Failed to parse final CodeIQ agent event:", parseError);
         }
       }
     } catch {
