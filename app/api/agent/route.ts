@@ -219,7 +219,8 @@ export async function POST(req: Request) {
                 tools: AGENT_TOOLS,
                 tool_choice: "auto",
                 temperature: 0.3,
-                max_tokens: 2048,
+                max_completion_tokens: 2048,
+                reasoning_format: "hidden",
               }),
             });
 
@@ -354,6 +355,8 @@ export async function POST(req: Request) {
             friendlyMessage = "The configured AI model is unavailable. The site administrator needs to select a currently supported model.";
           } else if (lower.includes("groq_rate_limit") || lower.includes("rate limit") || lower.includes("429")) {
             friendlyMessage = "The AI provider is temporarily rate-limited. Please wait a little and try again.";
+          } else if (lower.includes("400") || lower.includes("bad request") || lower.includes("unsupported")) {
+            friendlyMessage = "Groq rejected the AI request settings. The server configuration has been updated; if this continues, check the latest Vercel Runtime Logs.";
           }
           controller.enqueue(sseEvent(encoder, { type: "error", content: friendlyMessage }));
         }
