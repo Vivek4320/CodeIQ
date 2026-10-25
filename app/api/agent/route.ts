@@ -215,8 +215,8 @@ export async function POST(req: Request) {
             // Keep simple chat/greetings tool-free. Some model requests fail validation
             // when tool schemas are sent even though the user is only greeting.
             const latestUserText = String(messages[messages.length - 1]?.content || "").toLowerCase();
-            const needsTools = /\\b(run|execute|test|debug|fix|bug|calculate|math|calculator|read editor|inspect editor|explain this code|refactor)\\b/.test(latestUserText)
-              || /\\b(write|create|generate|build|implement)\\b.*\\b(code|function|class|program|script)\\b/.test(latestUserText);
+            const needsTools = /\b(run|execute|test|debug|fix|bug|calculate|math|calculator|read editor|inspect editor|explain this code|refactor)\b/.test(latestUserText)
+              || /\b(write|create|generate|build|implement)\\b.*\\b(code|function|class|program|script)\b/.test(latestUserText);
             const requestBody: Record<string, unknown> = {
               model: "openai/gpt-oss-120b",
               messages: conversation,
