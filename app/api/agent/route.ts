@@ -92,7 +92,7 @@ Use this structure with blank lines between sections:
 One or two sentences describing what the program does.
 **Step-by-step walkthrough**
 1. Explain one logical block or important line at a time. Keep each step to 1-3 sentences.
-2. Put variable, function, property, and method names in inline backticks, such as `students`, `getGrade()`, and `forEach()`.
+2. Put variable, function, property, and method names in inline backticks, such as \\`students\\`, \\`getGrade()\\`, and \\`forEach()\\`.
 3. Use short nested bullet points only when explaining multiple conditions or branches.
 **Example output** (only when you can confidently derive it from the code)
 Show the output in a fenced code block.
