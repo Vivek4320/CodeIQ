@@ -193,7 +193,7 @@ export async function POST(req: Request) {
 
             // Call LLM with tools via KeyKing
             const data = await keyking.chat.completions.create({
-              model: "llama-3.3-70b-versatile",
+              model: "openai/gpt-oss-120b",
               messages: conversation,
               tools: AGENT_TOOLS,
               tool_choice: "auto",
@@ -311,9 +311,18 @@ export async function POST(req: Request) {
             }
           }
         } catch (err: unknown) {
-          const message = err instanceof Error ? err.message : String(err);
-          console.error("Agent error:", message);
-          controller.enqueue(sseEvent(encoder, { type: "error", content: message }));
+          const rawMessage = err instanceof Error ? err.message : String(err);
+          console.error("Agent provider error:", rawMessage);
+          const lower = rawMessage.toLowerCase();
+          let friendlyMessage = "CodeIQ AI could not get a response right now. Please try again in a moment.";
+          if (lower.includes("invalid_api_key") || lower.includes("incorrect api key") || lower.includes("401")) {
+            friendlyMessage = "The AI provider's API key is invalid or expired. The site administrator needs to update the provider credentials in the deployment environment.";
+          } else if (lower.includes("model_not_found") || lower.includes("does not exist") || lower.includes("404")) {
+            friendlyMessage = "The configured AI model is unavailable. The site administrator needs to select a currently supported model.";
+          } else if (lower.includes("rate limit") || lower.includes("429")) {
+            friendlyMessage = "The AI provider is temporarily rate-limited. Please wait a little and try again.";
+          }
+          controller.enqueue(sseEvent(encoder, { type: "error", content: friendlyMessage }));
         }
 
         controller.enqueue(sseEvent(encoder, { type: "done" }));
