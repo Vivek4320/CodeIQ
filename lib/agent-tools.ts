@@ -12,8 +12,10 @@ export const AGENT_TOOLS = [
     function: {
       name: "run_code",
       description: "Execute code in a programming language and get the output. Use this to run code the user asks about or to test code you generate.",
+      strict: true,
       parameters: {
         type: "object" as const,
+        additionalProperties: false,
         properties: {
           language: {
             type: "string",
@@ -50,8 +52,10 @@ export const AGENT_TOOLS = [
     function: {
       name: "read_editor",
       description: "Read the current code in the editor. Use when the user asks you to look at, explain, or modify existing code.",
+      strict: true,
       parameters: {
         type: "object" as const,
+        additionalProperties: false,
         properties: {},
         required: [],
       },
