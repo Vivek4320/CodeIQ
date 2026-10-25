@@ -518,3 +518,40 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
     }
   }
 }
+
+
+/* ── Dark, minimal scrollbars across the editor and panels ── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #34343b #0b0b0d;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: #0b0b0d;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #34343b;
+  border: 2px solid #0b0b0d;
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #55555f;
+}
+
+/* CodeMirror editor: keep the scrollbar dark and subtle */
+.cm-scroller {
+  scrollbar-width: thin;
+  scrollbar-color: #34343b #0b0b0d;
+}
+
+.cm-scroller::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
