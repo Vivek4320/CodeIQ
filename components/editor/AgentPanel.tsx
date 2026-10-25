@@ -178,49 +178,107 @@ function CopyButton({ text, theme }: { text: string; theme: any }) {
 /* ─── Formatted Text ─── */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function FormattedText({ text, theme }: { text: string; theme: any }) {
-  const paragraphs = text.split("\n\n");
+  const lines = text.replace(/\\r\\n/g, "\\n").split("\\n");
+  const blocks: { type: "heading" | "step" | "bullet" | "paragraph"; marker?: string; text: string; indent?: number }[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const raw = lines[i];
+    const line = raw.trim();
+    if (!line) continue;
+
+    const heading = line.match(/^#{1,3}\\s+(.+)$/) || line.match(/^\\*\\*(.{2,60})\\*\\*:?$/);
+    if (heading) {
+      blocks.push({ type: "heading", text: heading[1].replace(/\\*\\*/g, "").replace(/:$/, "") });
+      continue;
+    }
+
+    const numbered = line.match(/^(\\d+)[.)]\\s+(.+)$/);
+    if (numbered) {
+      blocks.push({ type: "step", marker: numbered[1], text: numbered[2] });
+      continue;
+    }
+
+    const bullet = raw.match(/^(\\s*)[-*•]\\s+(.+)$/);
+    if (bullet) {
+      blocks.push({ type: "bullet", marker: "•", text: bullet[2], indent: Math.min(2, Math.floor(bullet[1].length / 2)) });
+      continue;
+    }
+
+    const subitem = raw.match(/^(\\s+)([a-z]|\\d+|[ivx]+)[.)]\\s+(.+)$/i);
+    if (subitem) {
+      blocks.push({ type: "bullet", marker: subitem[2] + ".", text: subitem[3], indent: 1 });
+      continue;
+    }
+
+    // Treat unmarked lines following a step/bullet as a continuation rather than a new list item.
+    const previous = blocks[blocks.length - 1];
+    if (previous && (previous.type === "step" || previous.type === "bullet" || previous.type === "paragraph")) {
+      previous.text += "\\n" + line;
+    } else {
+      blocks.push({ type: "paragraph", text: line });
+    }
+  }
 
   return (
-    <>
-      {paragraphs.map((para, pi) => {
-        // Check if paragraph is a numbered step like "1. Do something"
-        const stepMatch = para.trim().match(/^(\d+)\.\s+([\s\S]*)/);
-        if (stepMatch) {
-          const stepNum = stepMatch[1];
-          const stepText = stepMatch[2];
+    <div style={{ display: "flex", flexDirection: "column", gap: "9px", padding: "2px 0" }}>
+      {blocks.map((block, index) => {
+        if (block.type === "heading") {
           return (
-            <div key={pi} style={{
-              display: "flex", gap: "8px", alignItems: "flex-start",
-              margin: pi > 0 ? "6px 0 0" : "2px 0 0",
+            <div key={index} style={{
+              marginTop: index === 0 ? 0 : "7px", paddingBottom: "5px",
+              borderBottom: `1px solid ${theme.border}`, color: theme.text,
+              fontSize: "12px", fontWeight: 700, letterSpacing: "0.01em",
             }}>
-              <span style={{
-                fontSize: "10px", fontWeight: 700, color: theme.accent,
-                minWidth: "14px", textAlign: "right", flexShrink: 0,
-                marginTop: "2px",
-              }}>
-                {stepNum}.
-              </span>
-              <p style={{
-                fontSize: "12.5px", color: theme.muted, margin: 0,
-                lineHeight: 1.6, whiteSpace: "pre-wrap", flex: 1,
-              }}>
-                {renderFormattedText(stepText, theme)}
-              </p>
+              {renderFormattedText(block.text, theme)}
             </div>
           );
         }
 
-        // Regular paragraph
+        if (block.type === "step") {
+          return (
+            <div key={index} style={{
+              display: "grid", gridTemplateColumns: "22px minmax(0, 1fr)",
+              gap: "8px", alignItems: "start",
+            }}>
+              <span style={{
+                display: "inline-flex", alignItems: "center", justifyContent: "center",
+                width: "21px", height: "21px", borderRadius: "7px",
+                background: `${theme.accent}18`, color: theme.accent,
+                fontSize: "10px", fontWeight: 700, marginTop: "1px",
+              }}>{block.marker}</span>
+              <div style={{
+                minWidth: 0, color: theme.muted, fontSize: "12.5px",
+                lineHeight: 1.65, whiteSpace: "pre-wrap",
+              }}>
+                {renderFormattedText(block.text, theme)}
+              </div>
+            </div>
+          );
+        }
+
+        if (block.type === "bullet") {
+          return (
+            <div key={index} style={{
+              display: "grid", gridTemplateColumns: "14px minmax(0, 1fr)",
+              gap: "5px", marginLeft: (block.indent || 0) * 12 + 8,
+              color: theme.muted, fontSize: "12px", lineHeight: 1.65,
+            }}>
+              <span style={{ color: theme.accent, fontWeight: 700 }}>{block.marker}</span>
+              <div style={{ minWidth: 0, whiteSpace: "pre-wrap" }}>{renderFormattedText(block.text, theme)}</div>
+            </div>
+          );
+        }
+
         return (
-          <p key={pi} style={{
-            fontSize: "12.5px", color: theme.muted,
-            margin: pi > 0 ? "8px 0 0" : 0, lineHeight: 1.6, whiteSpace: "pre-wrap",
+          <p key={index} style={{
+            fontSize: "12.5px", color: theme.muted, margin: 0,
+            lineHeight: 1.7, whiteSpace: "pre-wrap",
           }}>
-            {renderFormattedText(para, theme)}
+            {renderFormattedText(block.text, theme)}
           </p>
         );
       })}
-    </>
+    </div>
   );
 }
 
