@@ -271,7 +271,7 @@ function CodeBlock({ code, language, theme, onApplyAndRun, canApply, isApplied, 
               color: isApplied ? "#fff" : theme.panel, cursor: "pointer",
               transition: "all 0.15s ease",
             }}>
-              {isApplied ? <><Check size={9} /> Applied</> : <><Check size={9} /> Apply</>}
+              {isApplied ? <><Check size={9} /> Applied</> : <><Check size={9} /> Apply to editor</>}
             </button>
           )}
         </div>
@@ -461,8 +461,6 @@ export default function AgentPanel({ language, existingCode, onApplyAndRun, onCl
                 return updated;
               });
             } else if (event.type === "tool") {
-              let toolRunLang = "";
-              let toolRunCode = "";
               setMessages((prev) => {
                 const updated = [...prev];
                 const last = { ...updated[updated.length - 1] };
@@ -476,22 +474,12 @@ export default function AgentPanel({ language, existingCode, onApplyAndRun, onCl
                       break;
                     }
                   }
-                  if (event.tool === "run_code" && event.args) {
-                    const codeArgs = event.args as Record<string, string>;
-                    if (codeArgs.code && codeArgs.language) {
-                      toolRunLang = codeArgs.language;
-                      toolRunCode = codeArgs.code;
-                    }
-                  }
                 }
                 last.toolSteps = steps;
                 last.thinking = undefined;
                 updated[updated.length - 1] = last;
                 return updated;
               });
-              if (toolRunLang && toolRunCode) {
-                setTimeout(() => onApplyAndRun(toolRunLang, toolRunCode), 0);
-              }
             } else if (event.type === "answer") {
               setMessages((prev) => {
                 const updated = [...prev];
@@ -505,9 +493,6 @@ export default function AgentPanel({ language, existingCode, onApplyAndRun, onCl
                 };
                 return updated;
               });
-              if (event.code && typeof event.code === "string" && event.code.trim()) {
-                setTimeout(() => onApplyAndRun(language, event.code as string), 0);
-              }
             } else if (event.type === "error") {
               setMessages((prev) => {
                 const updated = [...prev];
