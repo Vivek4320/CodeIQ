@@ -32,7 +32,7 @@ interface AgentPanelProps {
 
 const QUICK_ACTIONS = [
   { label: "Explain", icon: Lightbulb, prompt: "Explain what this code does step by step" },
-  { label: "Fix Bug", icon: Bug, prompt: "Find and fix any bugs in this code" },
+  { label: "Fix Bug", icon: Bug, prompt: "Act as CodeIQ AI Error Detective. Diagnose the current editor code: identify the root cause and evidence, point to the exact line or smallest relevant snippet, explain why it fails, provide the smallest safe fix, and verify it by running the code when supported. Distinguish confirmed errors from suspected issues. Preserve unrelated code and return the complete corrected code." },
   { label: "Optimize", icon: Zap, prompt: "Optimize this code for better performance" },
 ];
 
