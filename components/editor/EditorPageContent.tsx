@@ -480,28 +480,47 @@ function EditorPage({ initialLanguage }: { initialLanguage?: string } = {}) {
         </div>
       )}
       {showAgent && (
-        <AgentPanel
-          key={agentKey}
-          language={language}
-          existingCode={code}
-          onApplyAndRun={(nextLanguage, nextCode) => {
-            appliedCodeRef.current = nextCode;
-            setLanguage(nextLanguage);
-            setCode(nextCode);
-            if (nextLanguage === "html") {
-              setHtmlCode(nextCode);
-              setWebTab("html");
-            } else if (nextLanguage === "css") {
-              setCssCode(nextCode);
-              setWebTab("css");
-            }
-            setOutput([]);
-            setInputPrompts([]);
-            setShowAgent(false);
+        <div
+          role="dialog"
+          aria-label="CodeIQ AI coding assistant"
+          style={{
+            position: "fixed",
+            top: isMobile ? "56px" : "52px",
+            right: isMobile ? "10px" : "16px",
+            bottom: isMobile ? "10px" : "16px",
+            width: isMobile ? "calc(100vw - 20px)" : "min(390px, calc(100vw - 32px))",
+            height: "auto",
+            zIndex: 80,
+            overflow: "hidden",
+            border: `1px solid ${theme.border}`,
+            borderRadius: "12px",
+            backgroundColor: theme.panel,
+            boxShadow: "0 18px 60px rgba(0, 0, 0, 0.28)",
           }}
-          onClose={() => setShowAgent(false)}
-          onNewChat={() => setAgentKey((key) => key + 1)}
-        />
+        >
+          <AgentPanel
+            key={agentKey}
+            language={language}
+            existingCode={code}
+            onApplyAndRun={(nextLanguage, nextCode) => {
+              appliedCodeRef.current = nextCode;
+              setLanguage(nextLanguage);
+              setCode(nextCode);
+              if (nextLanguage === "html") {
+                setHtmlCode(nextCode);
+                setWebTab("html");
+              } else if (nextLanguage === "css") {
+                setCssCode(nextCode);
+                setWebTab("css");
+              }
+              setOutput([]);
+              setInputPrompts([]);
+              setShowAgent(false);
+            }}
+            onClose={() => setShowAgent(false)}
+            onNewChat={() => setAgentKey((key) => key + 1)}
+          />
+        </div>
       )}
       <SavePromptModal
         isOpen={showSavePrompt}
