@@ -479,6 +479,30 @@ function EditorPage({ initialLanguage }: { initialLanguage?: string } = {}) {
           </div>
         </div>
       )}
+      {showAgent && (
+        <AgentPanel
+          key={agentKey}
+          language={language}
+          existingCode={code}
+          onApplyAndRun={(nextLanguage, nextCode) => {
+            appliedCodeRef.current = nextCode;
+            setLanguage(nextLanguage);
+            setCode(nextCode);
+            if (nextLanguage === "html") {
+              setHtmlCode(nextCode);
+              setWebTab("html");
+            } else if (nextLanguage === "css") {
+              setCssCode(nextCode);
+              setWebTab("css");
+            }
+            setOutput([]);
+            setInputPrompts([]);
+            setShowAgent(false);
+          }}
+          onClose={() => setShowAgent(false)}
+          onNewChat={() => setAgentKey((key) => key + 1)}
+        />
+      )}
       <SavePromptModal
         isOpen={showSavePrompt}
         isAuthenticated={!!user}
