@@ -126,7 +126,7 @@ async function runCode(language: string, code: string, baseUrl: string): Promise
 function calculator(expression: string): string {
   try {
     // Only allow safe math characters
-    const sanitized = expression.replace(/[^0-9+\-*/().%\s^]|Math\.\w+/g, (match) => {
+    const sanitized = expression.replace(/[^0-9+\-*\/().%\s^]|Math\.\w+/g, (match) => {
       if (match.startsWith("Math.")) return match;
       return "";
     });
