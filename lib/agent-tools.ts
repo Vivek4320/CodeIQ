@@ -140,7 +140,7 @@ function calculator(expression: string): string {
 
     // Safe math evaluator — no eval/Function
     let pos = 0;
-    const tokens = jsExpr.match(/\d+\.?\d*|Math\.\w+|[+\-*/%()^]/g) || [];
+    const tokens = jsExpr.match(/\d+\.?\d*|Math\.\w+|[+\-*\/%()^]/g) || [];
     function parseExpr(): number {
       let left = parseTerm();
       while (pos < tokens.length && (tokens[pos] === "+" || tokens[pos] === "-")) {
