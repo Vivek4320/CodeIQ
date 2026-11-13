@@ -56,8 +56,14 @@ export const AGENT_TOOLS = [
       parameters: {
         type: "object" as const,
         additionalProperties: false,
-        properties: {},
-        required: [],
+        properties: {
+          scope: {
+            type: "string" as const,
+            enum: ["current"],
+            description: "Read the currently open editor content.",
+          },
+        },
+        required: ["scope"],
       },
     },
   },
@@ -120,7 +126,7 @@ async function runCode(language: string, code: string, baseUrl: string): Promise
 function calculator(expression: string): string {
   try {
     // Only allow safe math characters
-    const sanitized = expression.replace(/[^0-9+\-*/().%\s^]|Math\.\w+/g, (match) => {
+    const sanitized = expression.replace(/[^0-9+\\-*/().%\\s^]|Math\\.\\w+/g, (match) => {
       if (match.startsWith("Math.")) return match;
       return "";
     });
@@ -130,11 +136,11 @@ function calculator(expression: string): string {
     }
 
     // Replace ^ with ** for exponentiation
-    const jsExpr = sanitized.replace(/\^/g, "**");
+    const jsExpr = sanitized.replace(/\\^/g, "**");
 
     // Safe math evaluator — no eval/Function
     let pos = 0;
-    const tokens = jsExpr.match(/\d+\.?\d*|Math\.\w+|[+\-*/%()^]/g) || [];
+    const tokens = jsExpr.match(/\\d+\\.?\\d*|Math\\.\\w+|[+\\-*/%()^]/g) || [];
     function parseExpr(): number {
       let left = parseTerm();
       while (pos < tokens.length && (tokens[pos] === "+" || tokens[pos] === "-")) {
